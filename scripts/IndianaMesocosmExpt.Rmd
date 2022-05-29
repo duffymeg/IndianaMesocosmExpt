@@ -1,0 +1,159 @@
+---
+title: "Indiana Mesocosm Experiment"
+author: "Laura Lopez & Meghan Duffy"
+date: "23/04/2021 & Jan 2022"
+output:
+  word_document: default
+  pdf_document: default
+---
+#loading packages
+```{r,message=F,warning=F}
+library(Hmisc)
+library(tidyverse)
+library(RColorBrewer)
+library(lsmeans)
+library(ggsignif)
+library(here)
+library(cowplot)
+library(multcomp)
+library(multcompView)
+
+theme_set(theme_cowplot(font_size = 14))
+```
+
+#loading files
+
+```{r,message=F,warning=F}
+# Tell R where files are stored
+here::i_am("scripts/IndianaMesocosmExpt.Rmd")
+
+# Load the data
+indianadata<-readr::read_csv(here("data/infectedmeso.csv"))
+indianadata$chaoborusfactor<-as.factor(indianadata$chaoborus)
+summary(indianadata)
+
+```
+
+# Time series plots
+
+### Plot
+```{r, plotting infection prevalence}
+propinfovertimeplot<-ggplot(indianadata,aes(time,y=propinfected,group=chaoborusfactor,color=chaoborusfactor,shape=chaoborusfactor)) +
+  stat_summary(fun="mean",geom="line",size=1, show.legend = FALSE) +
+  stat_summary(fun.data = "mean_cl_boot",show.legend=FALSE) +
+  stat_summary(fun="mean",geom="point",size=3,aes(shape=chaoborusfactor),show.legend=FALSE) +
+  scale_shape_manual(values=c(15,16,17,18)) +
+#  labs(color="Predator\nDensity (per L)") +
+  scale_colour_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +
+  theme_bw()+theme(panel.grid = element_blank()) +
+  labs(x="Time (weeks)")+labs(y="Proportion infected") +
+  scale_x_discrete(limits=c("1", "2","3","4","5","6","7","8"))
+propinfovertimeplot
+
+ggsave(here("figures", "propinfovertimeplot.jpg"), propinfovertimeplot, units = "in", width = 6, height = 4, dpi = 300)
+
+#density of infected hosts
+infdensityovertimeplot<-ggplot(indianadata,aes(time,y=lndensityinfected,group=chaoborusfactor,color=chaoborusfactor,shape=chaoborusfactor)) +
+  stat_summary(fun="mean",geom="line",size=1, show.legend = FALSE) +
+  stat_summary(fun.data = "mean_cl_boot",show.legend=FALSE) + 
+  stat_summary(fun="mean",geom="point",size=2,aes(shape=chaoborusfactor),show.legend=FALSE) +
+  scale_shape_manual(values=c(15,16,17,18)) +
+  labs(color="Predator\nDensity (per L)") + 
+  scale_colour_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) + 
+  theme_bw()+theme(panel.grid = element_blank()) + 
+  labs(x="Time (weeks)") +
+  labs(y="ln(Density of infected hosts)") + 
+  scale_x_discrete(limits=c("1", "2","3","4","5","6","7","8")) 
+infdensityovertimeplot
+
+inftimeseriesplot <- plot_grid(propinfovertimeplot, infdensityovertimeplot, labels = "auto", ncol = 1, align = "v")
+inftimeseriesplot
+
+ggsave(here("figures", "inftimeseriesplot.jpg"), inftimeseriesplot, units = "in", width = 4, height = 5.5, dpi = 300)
+
+```
+
+### Summarizing data for reporting values in manuscript
+```{r, summarizing infection prevalence data}
+indianadata$totalinfected <- indianadata$adultsinfected + indianadata$juvenilesinfected
+indianadata$totaluninfected <- indianadata$adultsnotinfected + indianadata$juvenilesnotinfected
+
+indiana_infected_summary <- indianadata %>%
+  group_by(time, chaoborusfactor) %>%
+  summarise(meanpropinf = mean(propinfected), minpropinf = min(propinfected), maxpropinf = max(propinfected),  meaninfdensity = mean(totalinfected), mininfdensity = min(totalinfected), maxinfdensity = max(totalinfected)) 
+
+indiana_infected_summary
+```
+
+
+### Analysis -- note: this still needs more work
+```{r, analysis of infection prevalence over time}
+prevmodel1<-glm(cbind(totalinfected, totaluninfected) ~ chaoborus + (1|time), family=binomial(logit), data=indianadata) 
+anova(prevmodel1, test="Chisq")
+summary(prevmodel1)
+
+# Testing for overdispersion (using code from Ben Bolker via Michelle Fearon)
+overdisp_fun <- function(model) {
+  rdf <- df.residual(model)
+  rp <- residuals(model,type="pearson")
+  Pearson.chisq <- sum(rp^2)
+  prat <- Pearson.chisq/rdf
+  pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
+  c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
+}
+
+overdisp_fun(prevmodel1)
+# super overdispersed
+
+
+
+```
+
+# Integrated infected host density
+
+```{r, integrated infected host density analysis and plotting}
+infected<-readr::read_csv(here("data/infected1to8.csv"))
+infected$chaoborus<-as.factor(infected$chaoborus)
+summary(infected)
+aov1<-aov(integration~chaoborus,data=infected)
+summary(aov1)
+lsmeans(aov1,pairwise~chaoborus,adjust="tukey")
+
+
+ph <- glht(aov1, linfct = mcp(chaoborus = "Tukey"))
+CLD<-cld(ph)
+old.par <- par(mai=c(1,1,1.25,1), no.readonly = TRUE)
+plot(CLD)
+par(old.par)
+
+
+intinfhostplot <- ggplot(aov1,aes(x=chaoborus,y=integration,color=chaoborus)) +
+  geom_boxplot() +
+  labs(x="Predator density (per L)",y="Integrated infected host density (ADD UNITS)") +
+  scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +
+  theme_bw() +
+  geom_text(data=aov1,x=1,y=11,label = "a", color = "black", size = 5) +
+  geom_text(data=aov1,x=2,y=11,label = "a,b", color = "black",size = 5) +
+  geom_text(data=aov1,x=3,y=11,label = "b", color = "black",size = 5) +
+  geom_text(data=aov1,x=4,y=11,label = "c", color = "black",size = 5) +
+  ylim(0.0,12.0) + 
+  theme(panel.grid=element_blank())
+
+intinfhostplot
+
+```
+
+# Population density data
+
+```{r, population size over time}
+densityplot <- ggplot(indianadata, aes(x = time, y = (logone), color = chaoborus, group = chaoborus)) + 
+  stat_summary(fun = "mean", geom="line", aes(group = chaoborus)) + 
+  stat_summary(fun.data="mean_cl_boot") +
+  facet_grid(rows=vars(metsch)) +
+  labs(x="Time(week)",y="Log(Host density (l-1)+1)") + 
+  scale_fill_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +
+  theme_bw()+theme(panel.grid = element_blank())
+
+densityplot
+
+```
