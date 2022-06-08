@@ -98,6 +98,7 @@ inftimeseriesplot
 
 ```
 
+
 ### Summarizing infection prevalence data for reporting values in manuscript
 ```{r, summarizing infection prevalence data}
 indianadatametsch$totalinfected <- indianadatametsch$adultsinfected + indianadatametsch$juvenilesinfected
@@ -237,316 +238,7 @@ overdisp_fun(infdenssummaryanalysisweeks59)
 lsmeans(infdenssummaryanalysisweeks59,pairwise~chaoborusfactor,adjust="tukey")
 
 ```
-
-## Making one combined plot for figure 1
-```{r, plot combining infection prevalence and infected density}
-figure1 <- plot_grid(propinfovertimeplot, meaninfprevplot, infdensityovertimeplot, meaninfhostplot, labels = "auto", ncol = 2, align = "v", rel_heights = c(0.9, 1))
-figure1
-
-ggsave(here("figures", "figure1.jpg"), figure1, units = "in", width = 7, height = 5.5, dpi = 300)
-```
-
-
-# Analyses and plots related to Figure 2: Population density
-
-## Plotting time series of density
-
-```{r, population size over time}
-indianadata$metsch <- as.factor(indianadata$metsch)
-
-figure2parta <- ggplot(indianadata, aes(x = time, y = (logone), color = chaoborusfactor, group = chaoborusfactor, shape = chaoborusfactor)) + 
-  stat_summary(fun = "mean", geom="line", aes(group = chaoborusfactor)) + 
-  stat_summary(fun.data="mean_se") +
-    stat_summary(fun="mean",geom="point",size=4,aes(shape=chaoborusfactor),show.legend=FALSE) +
-  facet_grid(rows=vars(metsch)) +
-  labs(x="Time (week)",y="Prey density \n(LN prey per L + 1)") + 
-  scale_x_discrete(limits=c("1", "2","3","4","5","6","7","8","9")) + 
-  scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +
-    scale_shape_manual(values=c(15,16,17,18)) +
-  labs(color="Pred. dens.", shape = "Pred. dens.") +
-  theme_bw()+theme(panel.grid = element_blank()) +
-    theme(legend.position = c(0.09, 0.63)) +
-  theme(legend.key.size = unit(0.05, 'cm'), legend.title = element_text(size=10), #change legend title font size
-        legend.text = element_text(size=8)) # +
-#      theme(strip.text.y = element_text(color = "white")) +
-#   theme(strip.background = element_rect(color="white", fill="white", size=1.5, linetype="solid"
-#     )
-#   )
-
-figure2parta
-
-
-# ggsave(here("figures", "figure2.jpg"), figure2, units = "in", width = 6, height = 4, dpi = 300)
-
-```
-
-
-## Average total host density analysis
-
-```{r, average total host density analysis}
-# remove time 1 for analysis
-indianadataanalysis <- indianadata %>%
-  filter(time > 1)
-
-densitysummary <- indianadataanalysis %>%
-  group_by(chaoborusfactor, metsch, tank) %>%
-  summarise(meandens = mean(logone)) 
-  
-densitysummaryanalysis <- aov(meandens~chaoborusfactor*metsch,data=densitysummary)
-summary(densitysummaryanalysis)  
-
-overdisp_fun(densitysummaryanalysis)
-#not overdispersed
-
-lsmeans(densitysummaryanalysis,pairwise~chaoborusfactor*metsch,adjust="tukey")
-
-```
-## Average total host density plot
-
-```{r, average prey density plot}
-meandensityplot <- ggplot(densitysummaryanalysis,aes(x=chaoborusfactor,y=meandens, color=chaoborusfactor, fill = metsch)) +
-  geom_boxplot(lwd=0.75) +
-  geom_point(pch=17, position=position_jitterdodge(jitter.width = 0.2), alpha = 0.5, size = 2, color = 'black',show.legend=FALSE) +
-  labs(x="Predator density (per L)",y="Ave. prey density \n(LN prey per L + 1)") +
-  labs(color = "Predator density \n(per L)", fill = "Parasite treatment") +
-  scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black"), guide="none") +
-  scale_fill_manual(values=c('white','gray')) +
-  theme_bw() +   
-  geom_text(data=densitysummaryanalysis,x=1,y=4.6,label = "a              a", color = "black", size = 3) +
-  geom_text(data=densitysummaryanalysis,x=2,y=4.6,label = "a              a", color = "black",size = 3) +
-  geom_text(data=densitysummaryanalysis,x=3,y=4.6,label = "a              a", color = "black",size = 3) +
-  geom_text(data=densitysummaryanalysis,x=4,y=4.6,label = "b              b", color = "black",size = 3) +
-  ylim(0.0,4.6) + 
-  theme(panel.grid=element_blank()) +
-      theme(legend.position = c(0.13, 0.29)) +
-  theme(legend.key.size = unit(0.5, 'cm'), legend.title = element_text(size=10), #change legend title font size
-        legend.text = element_text(size=8)) 
-
-meandensityplot
-
-
-```
-
-
-## Making one combined plot for figure 2
-```{r, plot combining density and integrated density}
-figure2 <- plot_grid(figure2parta, meandensityplot, labels = "auto", ncol = 1, 
-                 rel_heights = c(2, 1))
-figure2
-
-ggsave(here("figures", "figure2.jpg"), figure2, units = "in", width = 6.1, height = 6, dpi = 300)
-```
-# Stage structure -- checking this but currently not in manuscript
-
-```{r, looking at stage structure}
-stagetimeplot <- ggplot(indianadata, aes(x = time, y = (propadults), color = chaoborusfactor, group = chaoborusfactor, shape = chaoborusfactor)) + 
-  stat_summary(fun = "mean", geom="line", aes(group = chaoborusfactor)) + 
-  stat_summary(fun.data="mean_se") +
-    stat_summary(fun="mean",geom="point",size=4,aes(shape=chaoborusfactor),show.legend=FALSE) +
-  facet_grid(rows=vars(metsch)) +
-  labs(x="Time (week)",y="Proportion adults") + 
-  scale_x_discrete(limits=c("1", "2","3","4","5","6","7","8","9")) + 
-  scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +
-    scale_shape_manual(values=c(15,16,17,18)) +
-  labs(color="Pred. dens.", shape = "Pred. dens.") +
-  theme_bw()+theme(panel.grid = element_blank()) +
-    theme(legend.position = c(0.09, 0.63)) +
-  theme(legend.key.size = unit(0.05, 'cm'), legend.title = element_text(size=10), 
-        legend.text = element_text(size=8)) 
-
-stagetimeplot
-```
-
-# Analyses and figures related to Figure 3: chlorophyll and egg ratio
-
-###TO DO: 
-### 1) reverse order of chlorophyll and egg ratio data
-### 2) look through egg ratio data more carefully to see if we have enough to reasonably split into two chunks; also try to figure out why some tanks that aren't high predation + parasitism are missing data
-
-## Egg ratio plot
-
-```{r, egg ratio data}
-eggs<-readr::read_csv(here("data/eggdata.csv"))
-eggs$pred<-as.factor(eggs$pred)
-#fixing week issue -- need to add 1 to all of these to have the weeks consistent across the different analyses
-eggs$time<-eggs$time+1
-eggs$time<-as.factor(eggs$time)
-
-summary(eggs)
-
-eggs$metsch <- factor(eggs$para, levels = c("metsch", "no metsch"),
-                  labels = c("Parasites", "No parasites"))
-
-eggs$metsch <- factor(eggs$metsch, c("No parasites", "Parasites"))
-
-eggplot <- ggplot(eggs,aes(time,y=eggs,group=pred,color=pred,shape=pred)) + 
-  stat_summary(fun="mean",geom="line",size=1,show.legend=FALSE) +
-  stat_summary(fun.data = "mean_cl_boot",show.legend=FALSE) + 
-  stat_summary(fun="mean",geom="point",size=2,aes(shape=pred)) + 
-  scale_shape_manual(values=c(15,16,17,18)) + 
-  labs(color="Pred. dens.", shape = "Pred. dens.") + 
-  scale_colour_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +  
-  theme_bw()+theme(panel.grid = element_blank()) + 
-  labs(y="Egg ratio \n(embryos per uninfected adult)") + 
-  theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) + 
-  facet_grid(rows=vars(metsch)) +
-        theme(legend.position = "none") +
-    theme(axis.text.x=element_blank(),
-          axis.title.x=element_blank())
-
-eggplot
-
-```
-
-## Egg ratio analysis
-
-```{r, analysis of egg ratio data}
-eggsummary <- eggs %>%
-  group_by(pred, metsch, tank) %>%
-  summarise(meaneggs = mean(eggs)) 
-  
-eggaov1 <- aov(meaneggs~pred*metsch,data=eggsummary)
-summary(eggaov1)  
-
-overdisp_fun(eggaov1)
-# not overdispersed
-
-lsmeans(eggaov1,pairwise~pred*metsch,adjust="tukey")
-
-#calculating sample sizes
-eggsummarysamplesizes <- eggs %>%
-  group_by(tank) %>%
-  summarise(n = n()) 
-```
-
-## Average egg ratio plot
-```{r, average egg ratio plot}
-eggsummaryplot <- ggplot(eggaov1,aes(x=pred,y=meaneggs, color=pred, fill = metsch)) +
-  geom_boxplot(lwd=0.75) +
-  geom_point(pch=17, position=position_jitterdodge(jitter.width = 0.2), alpha = 0.5, size = 2, color = 'black',show.legend=FALSE) +
-  labs(y="Average egg ratio \n(embryos per uninfected adult)") +
-  labs(color = "Predator density \n(per L)", fill = "Parasite treatment") +
-  scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black"), guide="none") +
-  scale_fill_manual(values=c('white','gray')) +
-  theme_bw() +   
-  theme(panel.grid=element_blank()) +
-      theme(legend.position = c(0.29, 0.83)) +
-  theme(legend.key.size = unit(0.5, 'cm'), legend.title = element_text(size=10), #change legend title font size
-        legend.text = element_text(size=8))  +   theme(axis.text.x=element_blank(),
-          axis.title.x=element_blank())
-
-eggsummaryplot
-
-
-```
-
-
-## Chlorophyll plot
-
-```{r, chlorophyll data}
-chlorodata<-readr::read_csv(here("data/indychlorono22.csv"))
-chlorodata$chaoborus<-as.factor(chlorodata$chaoborus)
-chlorodata$time<- chlorodata$time+1
-chlorodata$time<-as.factor(chlorodata$time)
-summary(chlorodata)
-
-chlorodata$metsch <- factor(chlorodata$metsch, levels = c("metsch", "no metsch"),
-                  labels = c("Parasites", "No parasites"))
-
-
-chlorodata$metsch <- factor(chlorodata$metsch, c("No parasites", "Parasites"))
-
-chloroplot <- ggplot(chlorodata,aes(time,y=chlorophyll,group=chaoborus,color=chaoborus,shape=chaoborus)) +
-  stat_summary(fun="mean",geom="line",size=1,show.legend=FALSE) +
-  stat_summary(fun.data = "mean_cl_boot",show.legend=FALSE) +
-  stat_summary(fun="mean",geom="point",size=2,aes(shape=chaoborus)) +
-  scale_shape_manual(values=c(15,16,17,18)) +
-  labs(color="Pred. dens.", shape = "Pred. dens.") +
-  labs(x="Time (weeks)") + 
-  labs(y="Mean chlorophyll \n(ug/L)") +
-  scale_colour_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +
-  theme_bw()+theme(panel.grid = element_blank()) +
-  theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
-  theme(axis.title.x=element_text(margin=margin(t=10,r=0,b=0,l=0))) +
-      theme(legend.position = c(0.45, 0.825)) +
-  theme(legend.key.size = unit(0.05, 'cm'), legend.title = element_text(size=10), #change legend title font size
-        legend.text = element_text(size=8)) +
-  facet_grid(rows=vars(metsch)) 
-
-chloroplot
-
-```
-
-## Chlorophyll analysis
-```{r, analysis of chlorophyll data}
-#chlorophyll did very different things in first and second halves of the experiment
-
-chlasummaryfirsthalf <- chlorodata %>%
-  filter(time == 2 | time == 3 | time == 4 | time == 5) %>%
-  group_by(chaoborus, metsch, tank) %>%
-  summarise(meanchla = mean(chlorophyll)) 
-  
-chlaov1 <- aov(meanchla~chaoborus*metsch,data=chlasummaryfirsthalf)
-summary(chlaov1)  
-
-overdisp_fun(chlaov1)
-# super overdispersed
-
-chlasummarysecondhalf <- chlorodata %>%
-  filter(time == 6 | time == 7 | time == 8 | time == 9) %>%
-  group_by(chaoborus, metsch, tank) %>%
-  summarise(meanchla = mean(chlorophyll)) 
-  
-chlaov2 <- aov(meanchla~chaoborus*metsch,data=chlasummarysecondhalf)
-summary(chlaov2)  
-
-overdisp_fun(chlaov2)
-# super overdispersed
-```
-
-## Plot of average chlorophyll
-
-```{r, average chlorophyll plot}
-firsthalfchlsummaryplot <- ggplot(chlaov1,aes(x=chaoborus,y=meanchla, color=chaoborus, fill = metsch)) +
-  geom_boxplot(lwd=0.75) +
-  geom_point(pch=17, position=position_jitterdodge(jitter.width = 0.2), alpha = 0.5, size = 2, color = 'black',show.legend=FALSE) +
-  labs(x="Predator density (per L)",y="Average chlorophyll a \nweeks 2-5") +
-  labs(color = "Predator density \n(per L)", fill = "Parasite treatment") +
-  scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black"), guide="none") +
-  scale_fill_manual(values=c('white','gray')) +
-  theme_bw() +   
-  theme(panel.grid=element_blank()) +
-      theme(legend.position = c(0.13, 0.75)) +
-        theme(legend.position = "none") 
-
-firsthalfchlsummaryplot
-
-secondhalfchlsummaryplot <- ggplot(chlaov2,aes(x=chaoborus,y=meanchla, color=chaoborus, fill = metsch)) +
-  geom_boxplot(lwd=0.75) +
-  geom_point(pch=17, position=position_jitterdodge(jitter.width = 0.2), alpha = 0.5, size = 2, color = 'black',show.legend=FALSE) +
-  labs(x="Predator density (per L)",y="Average chlorophyll a \nweeks 6-9") +
-  labs(color = "Predator density \n(per L)", fill = "Parasite treatment") +
-  scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black"), guide="none") +
-  scale_fill_manual(values=c('white','gray')) +
-  theme_bw() +   
-  theme(panel.grid=element_blank()) +
-      theme(legend.position = c(0.13, 0.75)) +
-        theme(legend.position = "none") 
-
-secondhalfchlsummaryplot
-
-```
-
-## Combining into figure 3
-
-```{r, making figure 3}
-figure3 <- plot_grid(eggplot, eggsummaryplot, NULL, chloroplot, firsthalfchlsummaryplot, secondhalfchlsummaryplot, labels = c('a', 'b', ' ', 'c', 'd', 'e'), ncol = 3, rel_heights = c(0.9, 1))
-figure3
-
-ggsave(here("figures", "figure3.jpg"), figure3, units = "in", width = 9, height = 5.5, dpi = 300)
-```
-
-# Figure 4: Evolutionary analyses
+## Looking at evolution of resistance
 ## Clones over time: importing data, calculating weighted averages
 ```{r, import data needed to look at clonal changes over time}
 evoldata<-readr::read_csv(here("data/genotype.frequencies_MHC_converted.csv"))
@@ -562,7 +254,6 @@ evoldata2$para <- factor(evoldata2$Parasites, levels = c("1", "0"),
 
 evoldata2$para <- factor(evoldata2$para, c("No parasites", "Parasites"))
 
-evoldata2$infectionmean_scaled <- evoldata2$infectionmean * 10^7
 ```
 
 ```{r, calculating weighted averages}
@@ -595,6 +286,7 @@ evoldata2$infectionmean_scaled <- evoldata2$BD05.42*BD0542inf_scaled  +
   evoldata2$IL14.43*IL1443inf_scaled  +
   evoldata2$ML30.82*ML3082inf_scaled  +
   evoldata2$ML32.84*ML3284inf_scaled
+
   
 BD0542pred  <- 0.0197
 BD0846pred  <- 0.0134
@@ -621,8 +313,8 @@ evoldata2$predationmean <- evoldata2$BD05.42*BD0542pred  +
 ```{r, plotting evolution of infection resistance}
 metschresevolplot <- ggplot(evoldata2,aes(round,y=infectionmean_scaled,group=pred,color=pred,shape=pred)) + 
   stat_summary(fun="mean",geom="line",size=1,show.legend=FALSE) +
-  stat_summary(fun.data = "mean_cl_boot",show.legend=FALSE) +
-  stat_summary(fun="mean",geom="point",size=2,aes(shape=pred)) +
+  stat_summary(fun.data = "mean_se",show.legend=FALSE) +
+  stat_summary(fun="mean",geom="point",size=4,aes(shape=pred)) +
   scale_shape_manual(values=c(15,16,17,18)) +
   labs(color="Pred. dens.", shape = "Pred. dens.") +
   scale_colour_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +
@@ -630,14 +322,12 @@ metschresevolplot <- ggplot(evoldata2,aes(round,y=infectionmean_scaled,group=pre
   theme(panel.grid = element_blank()) +
   ylim(0.5, 1.6) +
   labs(x="Time (weeks)") +
-  labs(y=bquote('Infection susceptibility '~(x10^7))) + 
+  labs(y=bquote('Infection suscept.'~(x10^7))) + 
   scale_x_continuous(breaks=c(0,2,6,9)) +
   theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
   theme(axis.title.x=element_text(margin=margin(t=10,r=0,b=0,l=0))) +
   facet_grid(rows=vars(para)) +
-  theme(legend.position = c(0.80, 0.855)) +
-  theme(legend.key.size = unit(0.05, 'cm'), legend.title = element_text(size=10),
-        legend.text = element_text(size=8)) 
+  theme(legend.position = "none") 
 metschresevolplot
 
 # ggsave(here("figures", "metschresevolplot.jpg"), metschresevolplot, units = "in", width = 6, height = 3.5, dpi = 300)
@@ -650,7 +340,7 @@ evoldata3 <- evoldata2 %>%
   filter(round != "0")
 
 #infection susceptibility trait evolution analysis
-infsuscmod1<-lme(infectionmean~pred+para+round+pred*para+pred*round+para*round+pred*para*round,random=~1|tank,data=evoldata3)
+infsuscmod1<-lme(infectionmean_scaled~pred+para+round+pred*para+pred*round+para*round+pred*para*round,random=~1|tank,data=evoldata3)
 summary(infsuscmod1)
 anova(infsuscmod1)
 lsmeans(infsuscmod1,pairwise~round,adjust="tukey")
@@ -662,15 +352,15 @@ lsmeans(infsuscmod1,pairwise~para,adjust="tukey")
 ```{r, plotting evolution of infection resistance grouping predation treatments}
 metschresevolplotgrouped <- ggplot(evoldata2,aes(round,y=infectionmean_scaled,group=para,color=para,shape=para)) + 
   stat_summary(fun="mean",geom="line",size=1,show.legend=FALSE) +
-  stat_summary(fun.data = "mean_cl_boot",show.legend=FALSE) +
-  stat_summary(fun="mean",geom="point",size=2,aes(shape=para)) +
-  scale_shape_manual(values=c(24,25)) +
-  labs(color="Parasitism", shape = "Parasitism") +
-  scale_colour_manual(values=c("#620D93", "#857A8C")) +
+  stat_summary(fun.data = "mean_se",show.legend=FALSE) +
+  stat_summary(fun="mean",geom="point",size=3,shape=21,aes(fill=para)) +
+  labs(color="Parasitism", fill="Parasitism") +
+  scale_colour_manual(values=c("black","black")) +
+  scale_fill_manual(values=c("white", "#857A8C")) +
   theme_bw() +
   theme(panel.grid = element_blank()) +
   labs(x="Time (weeks)") +
-  labs(y='Inf. suscept.') +
+  labs(y=bquote('Ave. infection suscept. '~(x10^7))) + 
   scale_x_continuous(breaks=c(0,2,6,9)) +  
   ylim(0.5, 1.6) +
   theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
@@ -684,17 +374,500 @@ metschresevolplotgrouped
 ```
 
 
+## Making one combined plot for figure 1
+```{r, plot combining infection prevalence and infected density}
+figure1 <- plot_grid(propinfovertimeplot, meaninfprevplot, infdensityovertimeplot, meaninfhostplot, metschresevolplot, metschresevolplotgrouped, labels = "auto", ncol = 2, rel_heights = c(0.9, 1, 1))
+figure1
+
+ggsave(here("figures", "figure1.jpg"), figure1, units = "in", width = 7, height = 8, dpi = 300)
+```
+
+
+# Analyses and plots related to Figure 2: Population density
+
+## Plotting time series of density
+
+```{r, population size over time}
+indianadata$metsch <- as.factor(indianadata$metsch)
+
+figure2parta <- ggplot(indianadata, aes(x = time, y = (logone), color = chaoborusfactor, group = chaoborusfactor, shape = chaoborusfactor)) + 
+  stat_summary(fun = "mean", geom="line", aes(group = chaoborusfactor)) + 
+  stat_summary(fun.data="mean_se") +
+    stat_summary(fun="mean",geom="point",size=4,aes(shape=chaoborusfactor),show.legend=FALSE) +
+  facet_grid(rows=vars(metsch)) +
+  labs(x="Time (week)",y="Prey density \n(LN prey per L + 1)") + 
+  scale_x_discrete(limits=c("1", "2","3","4","5","6","7","8","9")) + 
+  scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +
+    scale_shape_manual(values=c(15,16,17,18)) +
+  labs(color="Pred.", shape = "Pred.") +
+  theme_bw()+theme(panel.grid = element_blank()) +
+    theme(legend.position = c(0.92, 0.66)) +
+  theme(legend.key.size = unit(0.05, 'cm'), legend.title = element_text(size=7), #change legend title font size
+        legend.text = element_text(size=6)) # +
+#      theme(strip.text.y = element_text(color = "white")) +
+#   theme(strip.background = element_rect(color="white", fill="white", size=1.5, linetype="solid"
+#     )
+#   )
+
+figure2parta
+
+
+# ggsave(here("figures", "figure2.jpg"), figure2, units = "in", width = 6, height = 4, dpi = 300)
+
+```
+
+## Average total host density analysis
+
+```{r, average total host density analysis}
+# remove time 1 for analysis
+indianadataanalysis <- indianadata %>%
+  filter(time > 1)
+
+densitysummary <- indianadataanalysis %>%
+  group_by(chaoborusfactor, metsch, tank) %>%
+  summarise(meandens = mean(logone)) 
+  
+densitysummaryanalysis <- aov(meandens~chaoborusfactor*metsch,data=densitysummary)
+summary(densitysummaryanalysis)  
+
+overdisp_fun(densitysummaryanalysis)
+#not overdispersed
+
+lsmeans(densitysummaryanalysis,pairwise~chaoborusfactor*metsch,adjust="tukey")
+
+```
+## Average total host density plot
+
+```{r, average prey density plot}
+meandensityplot <- ggplot(densitysummaryanalysis,aes(x=chaoborusfactor,y=meandens, color=chaoborusfactor, fill = metsch)) +
+  geom_boxplot(lwd=0.75) +
+  geom_point(pch=17, position=position_jitterdodge(jitter.width = 0.2), alpha = 0.5, size = 2, color = 'black',show.legend=FALSE) +
+  labs(x="Predator density (per L)",y="Average prey density \n(LN prey per L + 1)") +
+  labs(color = "Predator density \n(per L)", fill = "Parasite treatment") +
+  scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black"), guide="none") +
+  scale_fill_manual(values=c('white','gray')) +
+  theme_bw() +   
+#  geom_text(data=densitysummaryanalysis,x=1,y=4.6,label = "a              a", color = "black", size = 3) +
+#  geom_text(data=densitysummaryanalysis,x=2,y=4.6,label = "a              a", color = "black",size = 3) +
+#  geom_text(data=densitysummaryanalysis,x=3,y=4.6,label = "a              a", color = "black",size = 3) +
+#  geom_text(data=densitysummaryanalysis,x=4,y=4.6,label = "b              b", color = "black",size = 3) +
+  geom_text(data=densitysummaryanalysis,x=2.5, y=0.5,label ="Predation: p < 0.0001\nParasitism: p = 0.12\nPred*Para: p = 0.49", color="black",size = 2.5) +
+  ylim(0.0,4.6) + 
+  theme(panel.grid=element_blank()) +
+      theme(legend.position = c(0.19, 0.38)) +
+  theme(legend.key.size = unit(0.5, 'cm'), legend.title = element_blank(),
+        legend.text = element_text(size=7)) 
+
+meandensityplot
+
+
+```
+
+
+```{r, uninfected population size over time}
+indianadata$uninfdensity <- indianadata$totaldensity - indianadata$densityinfected
+indianadata$lnuninfdensityplusone <- log(indianadata$uninfdensity + 1)
+
+uninfdensityplot <- ggplot(indianadata, aes(x = time, y = (lnuninfdensityplusone), color = chaoborusfactor, group = chaoborusfactor, shape = chaoborusfactor)) + 
+  stat_summary(fun = "mean", geom="line", aes(group = chaoborusfactor)) + 
+  stat_summary(fun.data="mean_se") +
+    stat_summary(fun="mean",geom="point",size=4,aes(shape=chaoborusfactor),show.legend=FALSE) +
+  facet_grid(rows=vars(metsch)) +
+  labs(x="Time (week)",y="Uninfected prey density \n(LN prey per L + 1)") + 
+  scale_x_discrete(limits=c("1", "2","3","4","5","6","7","8","9")) + 
+  scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +
+    scale_shape_manual(values=c(15,16,17,18)) +
+  labs(color="Pred.", shape = "Pred.") +
+  theme_bw()+theme(panel.grid = element_blank()) +
+    theme(legend.position = c(0.92, 0.66)) +
+  theme(legend.key.size = unit(0.05, 'cm'), legend.title = element_text(size=7), #change legend title font size
+        legend.text = element_text(size=6)) # +
+#      theme(strip.text.y = element_text(color = "white")) +
+#   theme(strip.background = element_rect(color="white", fill="white", size=1.5, linetype="solid"
+#     )
+#   )
+
+uninfdensityplot
+
+
+# ggsave(here("figures", "figure2.jpg"), figure2, units = "in", width = 6, height = 4, dpi = 300)
+
+```
+## Average susceptible host density analysis
+
+```{r, average susceptible host density analysis}
+# remove time 1 for analysis
+indianadataanalysis <- indianadata %>%
+  filter(time > 1)
+
+uninfdensitysummary <- indianadataanalysis %>%
+  group_by(chaoborusfactor, metsch, tank) %>%
+  summarise(meanuninfdens = mean(lnuninfdensityplusone)) 
+  
+uninfdensitysummaryanalysis <- aov(meanuninfdens~chaoborusfactor*metsch,data=uninfdensitysummary)
+summary(uninfdensitysummaryanalysis)  
+
+overdisp_fun(uninfdensitysummaryanalysis)
+#not overdispersed
+
+lsmeans(uninfdensitysummaryanalysis,pairwise~chaoborusfactor*metsch,adjust="tukey")
+
+```
+
+## Average uninf host density plot
+
+```{r, average uninf prey density plot}
+meanuninfdensityplot <- ggplot(uninfdensitysummaryanalysis,aes(x=chaoborusfactor,y=meanuninfdens, color=chaoborusfactor, fill = metsch)) +
+  geom_boxplot(lwd=0.75) +
+  geom_point(pch=17, position=position_jitterdodge(jitter.width = 0.2), alpha = 0.5, size = 2, color = 'black',show.legend=FALSE) +
+  labs(x="Predator density (per L)",y="Average uninf. prey density \n(LN prey per L + 1)") +
+  labs(color = "Predator density \n(per L)", fill = "Parasite treatment") +
+  scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black"), guide="none") +
+  scale_fill_manual(values=c('white','gray')) +
+  theme_bw() +   
+  geom_text(data=uninfdensitysummaryanalysis,x=2.5, y=0.75,label ="Predation: p < 0.0001\nParasitism: p = 0.024\nPred*Para: p = 0.36", color="black",size = 2.5) +
+#  ylim(0.0,4.6) + 
+  theme(panel.grid=element_blank()) +
+      theme(legend.position = c(0.19, 0.4)) +
+  theme(legend.key.size = unit(0.5, 'cm'), legend.title = element_blank(),
+        legend.text = element_text(size=7)) 
+
+meanuninfdensityplot
+
+
+```
+
+
+## Making one combined plot for figure 2
+```{r, plot combining density and integrated density}
+figure2 <- plot_grid(figure2parta, meandensityplot, 
+                     uninfdensityplot, meanuninfdensityplot, labels = "auto", ncol = 2)
+figure2
+
+ggsave(here("figures", "figure2.jpg"), figure2, units = "in", width = 7, height = 5.5, dpi = 300)
+```
+# Stage structure -- maybe put this in a supplement
+```{r, looking at stage structure}
+stagetimeplot <- ggplot(indianadata, aes(x = time, y = (propadults), color = chaoborusfactor, group = chaoborusfactor, shape = chaoborusfactor)) + 
+  stat_summary(fun = "mean", geom="line", aes(group = chaoborusfactor)) + 
+  stat_summary(fun.data="mean_se") +
+    stat_summary(fun="mean",geom="point",size=4,aes(shape=chaoborusfactor),show.legend=FALSE) +
+  facet_grid(rows=vars(metsch)) +
+  labs(x="Time (week)",y="Proportion adults") + 
+  scale_x_discrete(limits=c("1", "2","3","4","5","6","7","8","9")) + 
+  scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +
+    scale_shape_manual(values=c(15,16,17,18)) +
+  labs(color="Pred.", shape = "Pred.") +
+  theme_bw()+theme(panel.grid = element_blank()) +
+    theme(legend.position = c(0.07, 0.63)) +
+  theme(legend.key.size = unit(0.05, 'cm'), legend.title = element_text(size=10), 
+        legend.text = element_text(size=8)) 
+
+stagetimeplot
+
+ggsave(here("figures", "SuppAgeStructure.jpg"), stagetimeplot, units = "in", width = 5, height = 4, dpi = 300)
+```
+
+# Analyses and figures related to Figure 3: chlorophyll and egg ratio
+## Chlorophyll plot
+
+```{r, chlorophyll data}
+chlorodata<-readr::read_csv(here("data/indychlorono22.csv"))
+chlorodata$chaoborus<-as.factor(chlorodata$chaoborus)
+chlorodata$time<- chlorodata$time+1
+chlorodata$time<-as.factor(chlorodata$time)
+summary(chlorodata)
+
+chlorodata$metsch <- factor(chlorodata$metsch, levels = c("metsch", "no metsch"),
+                  labels = c("Parasites", "No parasites"))
+
+
+chlorodata$metsch <- factor(chlorodata$metsch, c("No parasites", "Parasites"))
+
+chloroplot <- ggplot(chlorodata,aes(time,y=chloroln,group=chaoborus,color=chaoborus,shape=chaoborus)) +
+  stat_summary(fun="mean",geom="line",size=1,show.legend=FALSE) +
+  stat_summary(fun.data = "mean_cl_boot",show.legend=FALSE) +
+  stat_summary(fun="mean",geom="point",size=2,aes(shape=chaoborus)) +
+  scale_shape_manual(values=c(15,16,17,18)) +
+  labs(color="Pred. dens.", shape = "Pred. dens.") +
+  labs(y="LN chlorophyll \n(ug/L)") +
+  scale_colour_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +
+  theme_bw()+theme(panel.grid = element_blank()) +
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
+  theme(axis.title.x=element_text(margin=margin(t=10,r=0,b=0,l=0))) +
+      theme(legend.position = "none") +
+     theme(axis.text.x=element_blank(),
+          axis.title.x=element_blank()) +
+  facet_grid(rows=vars(metsch)) 
+
+chloroplot
+
+```
+
+## Chlorophyll analysis
+```{r, analysis of chlorophyll data}
+#chlorophyll did very different things in first and second halves of the experiment
+
+chlasummaryfirsthalf <- chlorodata %>%
+  filter(time == 2 | time == 3 | time == 4 | time == 5) %>%
+  group_by(chaoborus, metsch, tank) %>%
+  summarise(meanchla = mean(chlorophyll),meanlnchla = mean(chloroln)) 
+  
+chlaov1 <- aov(meanchla~chaoborus*metsch,data=chlasummaryfirsthalf)
+summary(chlaov1)  
+
+overdisp_fun(chlaov1)
+# super overdispersed
+
+chlaov1b <- aov(meanlnchla~chaoborus*metsch,data=chlasummaryfirsthalf)
+summary(chlaov1b)  
+
+overdisp_fun(chlaov1b)
+# not overdispersed
+
+chlasummarysecondhalf <- chlorodata %>%
+  filter(time == 6 | time == 7 | time == 8 | time == 9) %>%
+  group_by(chaoborus, metsch, tank) %>%
+  summarise(meanchla = mean(chlorophyll),meanlnchla = mean(chloroln)) 
+  
+chlaov2 <- aov(meanchla~chaoborus*metsch,data=chlasummarysecondhalf)
+summary(chlaov2)  
+
+overdisp_fun(chlaov2)
+# super overdispersed
+
+chlaov2b <- aov(meanlnchla~chaoborus*metsch,data=chlasummarysecondhalf)
+summary(chlaov2b)  
+
+overdisp_fun(chlaov2b)
+# super overdispersed
+```
+
+## Plot of average chlorophyll
+
+```{r, average chlorophyll plot}
+firsthalfchlsummaryplot <- ggplot(chlaov1b,aes(x=chaoborus,y=meanlnchla, color=chaoborus, fill = metsch)) +
+  geom_boxplot(lwd=0.75) +
+  geom_point(pch=17, position=position_jitterdodge(jitter.width = 0.2), alpha = 0.5, size = 2, color = 'black',show.legend=FALSE) +
+    geom_text(data=chlaov1b,x=1.75, y=2.5,label ="Predation: p = 0.0005\nParasitism: p = 0.35\nPred*Para: p = 0.24", color="black",size = 2.5) +
+  labs(x="Predator density (per L)",y="Average LN chlorophyll \nweeks 2-5 (ug/L)") +
+  labs(color = "Predator density \n(per L)", fill = "Parasite treatment") +
+  scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black"), guide="none") +
+  scale_fill_manual(values=c('white','gray')) +
+  theme_bw() +   
+  theme(panel.grid=element_blank()) +
+        theme(legend.position = "none") +
+       theme(axis.text.x=element_blank(),
+          axis.title.x=element_blank())
+
+firsthalfchlsummaryplot
+
+secondhalfchlsummaryplot <- ggplot(chlaov2b,aes(x=chaoborus,y=meanlnchla, color=chaoborus, fill = metsch)) +
+  geom_boxplot(lwd=0.75) +
+  geom_point(pch=17, position=position_jitterdodge(jitter.width = 0.2), alpha = 0.5, size = 2, color = 'black',show.legend=FALSE) +
+    geom_text(data=chlaov2b,x=1.5, y=0.75,label ="Predation: p < 0.0001\nParasitism: p = 0.50\nPred*Para: p = 0.16", color="black",size = 2.5) +
+  labs(y="Average LN chlorophyll \nweeks 6-9 (ug/L)") +
+  labs(color = "Predator density \n(per L)", fill = "Parasite treatment") +
+  scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black"), guide="none") +
+  scale_fill_manual(values=c('white','gray'))  +
+  theme_bw() +   
+  theme(panel.grid=element_blank())  +
+        theme(legend.position = "none") +
+       theme(axis.text.x=element_blank(),
+          axis.title.x=element_blank())
+
+secondhalfchlsummaryplot
+
+```
+
+## Egg ratio plot
+
+```{r, egg ratio data}
+eggs<-readr::read_csv(here("data/eggdata.csv"))
+eggs$pred<-as.factor(eggs$pred)
+#fixing week issue -- need to add 1 to all of these to have the weeks consistent across the different analyses
+eggs$time<-eggs$time+1
+eggs$time<-as.factor(eggs$time)
+
+summary(eggs)
+
+eggs$metsch <- factor(eggs$para, levels = c("metsch", "no metsch"),
+                  labels = c("Parasites", "No parasites"))
+
+eggs$metsch <- factor(eggs$metsch, c("No parasites", "Parasites"))
+
+eggplot <- ggplot(eggs,aes(time,y=eggs,group=pred,color=pred,shape=pred)) + 
+  stat_summary(fun="mean",geom="line",size=1,show.legend=FALSE) +
+  stat_summary(fun.data = "mean_cl_boot",show.legend=FALSE) + 
+  stat_summary(fun="mean",geom="point",size=2,aes(shape=pred)) + 
+  scale_shape_manual(values=c(15,16,17,18)) + 
+  labs(color="Pred.", shape = "Pred.") + 
+  scale_colour_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +  
+  theme_bw()+theme(panel.grid = element_blank()) + 
+  labs(x="Time (weeks)") + 
+  labs(y="Egg ratio \n(embryos per uninfected adult)") + 
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) + 
+  facet_grid(rows=vars(metsch)) +
+      theme(legend.position = c(0.85, 0.34)) +
+  theme(legend.key.size = unit(0.05, 'cm'), legend.title = element_text(size=7), #change legend title font size
+        legend.text = element_text(size=6)) 
+
+eggplot
+
+```
+
+## Egg ratio analysis
+
+```{r, analysis of egg ratio data}
+eggsummary <- eggs %>%
+  group_by(pred, metsch, tank) %>%
+  summarise(meaneggs = mean(eggs)) 
+  
+eggaov1 <- aov(meaneggs~pred*metsch,data=eggsummary)
+summary(eggaov1)  
+
+overdisp_fun(eggaov1)
+# not overdispersed
+
+lsmeans(eggaov1,pairwise~pred*metsch,adjust="tukey")
+
+#calculating sample sizes
+eggsummarysamplesizes <- eggs %>%
+  group_by(pred, metsch, tank) %>%
+  summarise(n = n()) 
+
+eggsummarysamplesizes
+
+eggsummarysamplesizes_25 <- eggs %>%
+  filter(time == 2 | time == 3 | time == 4 | time == 5) %>%
+  group_by(pred, metsch, tank) %>%
+  summarise(n = n()) 
+
+eggsummarysamplesizes_25
+
+eggsummarysamplesizes_69 <- eggs %>%
+  filter(time == 6 | time == 7 | time == 8 | time == 9) %>%
+  group_by(pred, metsch, tank) %>%
+  summarise(n = n()) 
+
+eggsummarysamplesizes_69
+
+eggsummary25 <- eggs %>%
+  filter(time == 2 | time == 3 | time == 4 | time == 5) %>%  
+  group_by(pred, metsch, tank) %>%
+  summarise(meaneggs = mean(eggs)) 
+
+eggaov25 <- aov(meaneggs~pred*metsch,data=eggsummary25)
+summary(eggaov25)  
+
+eggsummary69 <- eggs %>%
+  filter(time == 6 | time == 7 | time == 8 | time == 9) %>%
+  group_by(pred, metsch, tank) %>%
+  summarise(meaneggs = mean(eggs)) 
+
+eggaov69 <- aov(meaneggs~pred*metsch,data=eggsummary69)
+summary(eggaov69)  
+```
+
+## Average egg ratio plot
+```{r, average egg ratio plot}
+eggsummaryplot <- ggplot(eggaov1,aes(x=pred,y=meaneggs, color=pred, fill = metsch)) +
+  geom_boxplot(lwd=0.75) +
+  geom_point(pch=17, position=position_jitterdodge(jitter.width = 0.2), alpha = 0.5, size = 2, color = 'black',show.legend=FALSE) +
+      geom_text(data=eggaov1,x=2.3, y=2.62,label ="Predation: p < 0.0001\nParasitism: p = 0.16\nPred*Para: p = 0.50", color="black",size = 2.5) +
+  labs(y="Average egg ratio \n(embryos per uninfected adult)") +
+  labs(color = "Predator density \n(per L)", fill = "Parasite treatment") +
+  scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black"), guide="none") +
+  scale_fill_manual(values=c('white','gray')) +
+  theme_bw() +   
+  theme(panel.grid=element_blank()) +
+      theme(legend.position = c(0.15, 0.83)) +
+  theme(legend.key.size = unit(0.5, 'cm'), legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))  
+
+eggsummaryplot
+
+
+```
+
+```{r, egg plots split by time}
+eggsummaryplot25 <- ggplot(eggaov25,aes(x=pred,y=meaneggs, color=pred, fill = metsch)) +
+  geom_boxplot(lwd=0.75) +
+  geom_point(pch=17, position=position_jitterdodge(jitter.width = 0.2), alpha = 0.5, size = 2, color = 'black',show.legend=FALSE) +
+      geom_text(data=eggaov25,x=1.5, y=4.45,label ="Predation: p < 0.0001\nParasitism: p = 0.071\nPred*Para: p = 0.56", color="black",size = 2.5) +
+  labs(x="Predator density (per L)", y="Average egg ratio weeks 2-5 \n(embryos per uninfected adult)") +
+  labs(color = "Predator density \n(per L)", fill = "Parasite treat.") +
+  scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black"), guide="none") +
+  scale_fill_manual(values=c('white','gray')) +
+  theme_bw() +   
+  theme(panel.grid=element_blank()) +
+        theme(legend.position = "none") 
+
+
+eggsummaryplot25
+
+
+eggsummaryplot69 <- ggplot(eggaov69,aes(x=pred,y=meaneggs, color=pred, fill = metsch)) +
+  geom_boxplot(lwd=0.75) +
+  geom_point(pch=17, position=position_jitterdodge(jitter.width = 0.2), alpha = 0.5, size = 2, color = 'black',show.legend=FALSE) +
+      geom_text(data=eggaov69,x=1.5, y=4.45,label ="Predation: p = 0.086\nParasitism: p = 0.91\nPred*Para: p = 0.49", color="black",size = 2.5) +
+  labs(x="Predator density (per L)", y="Average egg ratio weeks 6-9 \n(embryos per uninfected adult)") +
+  labs(color = "Predator density \n(per L)", fill = "Parasite treatment") +
+  scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black"), guide="none") +
+  ylim(0,5) +
+  scale_fill_manual(values=c('white','gray')) +
+  theme_bw() +   
+  theme(panel.grid=element_blank()) +
+        theme(legend.position = c(0.7, 0.86)) +
+  theme(legend.key.size = unit(0.5, 'cm'), legend.title = element_blank(), #change legend title font size
+        legend.text = element_text(size=7))  
+
+eggsummaryplot69
+```
+
+
+## Combining into figure 3
+
+```{r, making figure 3}
+figure3 <- plot_grid(chloroplot, firsthalfchlsummaryplot, secondhalfchlsummaryplot, eggplot, eggsummaryplot25, eggsummaryplot69, labels = c('a', 'b', 'c', 'd', 'e', 'f'), ncol = 3, rel_heights = c(0.9, 1))
+figure3
+
+ggsave(here("figures", "figure3.jpg"), figure3, units = "in", width = 9, height = 5.5, dpi = 300)
+```
+
+# Figure 4: Evolutionary analyses
+
+## Correlations between traits
+```{r, correlations between pred and parasite susceptibility}
+traitdata<-readr::read_csv(here("data/traits2.csv"))
+str(traitdata)
+
+traitsummary <- traitdata %>%
+  summarise(meaninf = mean(inf.susc)) 
+
+traitplot<-ggplot(traitdata, aes(x=inf.susc,y=pred.susc)) +
+  geom_point(shape=16, size=3, color='black') +
+  geom_smooth(method=lm,linetype='dashed', se=FALSE) +
+  theme_bw()+theme(panel.grid = element_blank()) + 
+  labs(x=bquote('Infection susceptibility'~(x10^7))) +
+  labs(y='Predation suscept.') 
+
+
+traitplot
+
+```
+
 ## Predation susceptibility
 ```{r, plotting susceptibility to predation over time}
 predresevolplot<-ggplot(evoldata2,aes(round,y=predationmean,group=pred,color=pred,shape=pred)) + 
   stat_summary(fun="mean",geom="line",size=1,show.legend=FALSE) + 
   stat_summary(fun.data = "mean_cl_boot",show.legend=FALSE) +
-  stat_summary(fun="mean",geom="point",size=2,aes(shape=pred)) +
+  stat_summary(fun="mean",geom="point",size=4,aes(shape=pred)) +
   scale_shape_manual(values=c(15,16,17,18)) +
-  labs(color="Predator\ndensity (per L)", shape = "Predator\ndensity (per L)") +
+  labs(color="Pred. dens.", shape = "Pred. dens.") +
   scale_colour_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +
   theme_bw()+theme(panel.grid = element_blank()) + 
-  labs(x="Time (weeks)")+labs(y="Predation susceptibility") +
+  labs(x="Time (weeks)")+labs(y="Ave. pred. suscept.") +
   theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
   theme(axis.title.x=element_text(margin=margin(t=10,r=0,b=0,l=0))) +
   scale_x_continuous(breaks=c(0,2,6,9)) +
@@ -722,29 +895,29 @@ lsmeans(predmod1,pairwise~para,adjust="tukey")
 predresevolplottogether<-ggplot(evoldata2,aes(round,y=predationmean,group=para,color=para,shape=para)) + 
   stat_summary(fun="mean",geom="line",size=1,show.legend=FALSE) +
   stat_summary(fun.data = "mean_cl_boot",show.legend=FALSE) +
-  stat_summary(fun="mean",geom="point",size=2,aes(shape=para)) +
-  scale_shape_manual(values=c(24,25)) +
-  labs(color="Parasitism", shape = "Parasitism") +
-  scale_colour_manual(values=c("#620D93", "#857A8C")) +
+  stat_summary(fun="mean",geom="point",size=3,shape=21,aes(fill=para)) +
+  labs(color="Parasitism", fill="Parasitism") +
+  scale_colour_manual(values=c("black","black")) +
+  scale_fill_manual(values=c("white", "#857A8C")) +
   theme_bw() +
   theme(panel.grid = element_blank()) +
   labs(x="Time (weeks)") +
-  labs(y="Pred. susc.") +
+  labs(y="Ave. pred. suscept.") +
   theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
-  scale_x_continuous(breaks=c(0,3,6,9)) +
+  scale_x_continuous(breaks=c(0,2,6,9)) +
   theme(axis.title.x=element_text(margin=margin(t=10,r=0,b=0,l=0)))  +
-    theme(legend.position = c(0.2, 0.78)) +
+    theme(legend.position = c(0.3, 0.8)) +
   theme(legend.key.size = unit(0.05, 'cm'), legend.title = element_blank(),
         legend.text = element_text(size=8)) 
 predresevolplottogether
 ```
 
-## Combining to make figure 4
-```{r, making figure 4}
-figure4 <- plot_grid(metschresevolplot, predresevolplot, metschresevolplotgrouped, predresevolplottogether, labels = "auto", ncol = 2, rel_heights = c(2, 1))
-figure4
+## Combining to make old figure 4
+```{r, making old figure 4 which is now in the supplement}
+evolutionplot <- plot_grid(traitplot, predresevolplot, predresevolplottogether, labels = "auto", ncol = 1)
+evolutionplot
 
-ggsave(here("figures", "figure4.jpg"), figure4, units = "in", width = 10, height = 5, dpi = 300)
+ggsave(here("figures", "evolutionplot.jpg"), evolutionplot, units = "in", width = 3, height = 7, dpi = 300)
 ```
 
 
