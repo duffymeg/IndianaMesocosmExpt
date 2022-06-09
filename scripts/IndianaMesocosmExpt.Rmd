@@ -257,6 +257,7 @@ evoldata2$para <- factor(evoldata2$para, c("No parasites", "Parasites"))
 ```
 
 ```{r, calculating weighted averages}
+#Note: "inf" is infection rate, beta. It is the product of the per spore susceptibility and the susceptible feeding rate.
 BD0542inf <- 0.000000079776
 BD0846inf <- 9.81E-08
 BD1964inf	<- 0
@@ -287,6 +288,28 @@ evoldata2$infectionmean_scaled <- evoldata2$BD05.42*BD0542inf_scaled  +
   evoldata2$ML30.82*ML3082inf_scaled  +
   evoldata2$ML32.84*ML3284inf_scaled
 
+# checking if things would be different if we used just per spore susceptibility (p)
+BD0542p <- 5.54 * 10-4
+BD0846p <- 5.64 * 10-4
+BD1964p	<- 0
+CB2468p	<- 5.25 * 10-4
+DW2258p	<- 6.88 * 10-4
+DW2975p	<- 5.77 * 10-4
+ML3082p	<- 8.58 * 10-4
+ML3284p	<- 4.93 * 10-4
+IL1443p	<- 1.17 * 10-3
+
+evoldata2$pmean <- evoldata2$BD05.42*BD0542p  +
+  evoldata2$BD08.46*BD0846p  +
+  evoldata2$BD19.64*BD1964p  +
+  evoldata2$CB24.68*CB2468p  +
+  evoldata2$DW22.58*DW2258p  +
+  evoldata2$DW29.75*DW2975p  +
+  evoldata2$IL14.43*IL1443p  +
+  evoldata2$ML30.82*ML3082p  +
+  evoldata2$ML32.84*ML3284p
+
+#answer: no significant evolution of p
   
 BD0542pred  <- 0.0197
 BD0846pred  <- 0.0134
@@ -322,7 +345,7 @@ metschresevolplot <- ggplot(evoldata2,aes(round,y=infectionmean_scaled,group=pre
   theme(panel.grid = element_blank()) +
   ylim(0.5, 1.6) +
   labs(x="Time (weeks)") +
-  labs(y=bquote('Infection suscept.'~(x10^7))) + 
+  labs(y=expression(paste("Ave. infection rate, "*beta*", ("*"*10"^"-7"*")"))) + 
   scale_x_continuous(breaks=c(0,2,6,9)) +
   theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
   theme(axis.title.x=element_text(margin=margin(t=10,r=0,b=0,l=0))) +
@@ -331,6 +354,26 @@ metschresevolplot <- ggplot(evoldata2,aes(round,y=infectionmean_scaled,group=pre
 metschresevolplot
 
 # ggsave(here("figures", "metschresevolplot.jpg"), metschresevolplot, units = "in", width = 6, height = 3.5, dpi = 300)
+
+## checking for consistency of pattern with just p:
+pevolplot <- ggplot(evoldata2,aes(round,y=pmean,group=pred,color=pred,shape=pred)) + 
+  stat_summary(fun="mean",geom="line",size=1,show.legend=FALSE) +
+  stat_summary(fun.data = "mean_se",show.legend=FALSE) +
+  stat_summary(fun="mean",geom="point",size=4,aes(shape=pred)) +
+  scale_shape_manual(values=c(15,16,17,18)) +
+  labs(color="Pred. dens.", shape = "Pred. dens.") +
+  scale_colour_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  labs(x="Time (weeks)") +
+  labs(y="Per spore susceptibility") + 
+  scale_x_continuous(breaks=c(0,2,6,9)) +
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
+  theme(axis.title.x=element_text(margin=margin(t=10,r=0,b=0,l=0))) +
+  facet_grid(rows=vars(para)) +
+  theme(legend.position = "none") 
+
+pevolplot
 ```
 
 ## Analysis related to Metsch susceptibility evolution
@@ -346,6 +389,13 @@ anova(infsuscmod1)
 lsmeans(infsuscmod1,pairwise~round,adjust="tukey")
 lsmeans(infsuscmod1,pairwise~para,adjust="tukey")
 
+
+pmod1<-lme(pmean~pred+para+round+pred*para+pred*round+para*round+pred*para*round,random=~1|tank,data=evoldata3)
+summary(pmod1)
+anova(pmod1)
+lsmeans(pmod1,pairwise~round,adjust="tukey")
+lsmeans(pmod1,pairwise~para,adjust="tukey")
+
 ```
 
 ## Plotting evolution of infection resistance grouping predation treatments
@@ -360,7 +410,7 @@ metschresevolplotgrouped <- ggplot(evoldata2,aes(round,y=infectionmean_scaled,gr
   theme_bw() +
   theme(panel.grid = element_blank()) +
   labs(x="Time (weeks)") +
-  labs(y=bquote('Ave. infection suscept. '~(x10^7))) + 
+  labs(y=expression(paste("Ave. infection rate, "*beta*", ("*"*10"^"-7"*")"))) + 
   scale_x_continuous(breaks=c(0,2,6,9)) +  
   ylim(0.5, 1.6) +
   theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
@@ -849,8 +899,8 @@ traitplot<-ggplot(traitdata, aes(x=inf.susc,y=pred.susc)) +
   geom_point(shape=16, size=3, color='black') +
   geom_smooth(method=lm,linetype='dashed', se=FALSE) +
   theme_bw()+theme(panel.grid = element_blank()) + 
-  labs(x=bquote('Infection susceptibility'~(x10^7))) +
-  labs(y='Predation suscept.') 
+  labs(x=expression(paste("Infection rate, "*beta*", ("*"*10"^"-7"*")"))) +
+  labs(y=expression(paste("Pred. suscept., "*alpha*" ")))
 
 
 traitplot
@@ -867,7 +917,8 @@ predresevolplot<-ggplot(evoldata2,aes(round,y=predationmean,group=pred,color=pre
   labs(color="Pred. dens.", shape = "Pred. dens.") +
   scale_colour_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +
   theme_bw()+theme(panel.grid = element_blank()) + 
-  labs(x="Time (weeks)")+labs(y="Ave. pred. suscept.") +
+  labs(x="Time (weeks)")+
+  labs(y=expression(paste("Ave. pred. suscept., "*alpha*" "))) +
   theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
   theme(axis.title.x=element_text(margin=margin(t=10,r=0,b=0,l=0))) +
   scale_x_continuous(breaks=c(0,2,6,9)) +
@@ -902,7 +953,7 @@ predresevolplottogether<-ggplot(evoldata2,aes(round,y=predationmean,group=para,c
   theme_bw() +
   theme(panel.grid = element_blank()) +
   labs(x="Time (weeks)") +
-  labs(y="Ave. pred. suscept.") +
+  labs(y=expression(paste("Ave. pred. suscept., "*alpha*" "))) +
   theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
   scale_x_continuous(breaks=c(0,2,6,9)) +
   theme(axis.title.x=element_text(margin=margin(t=10,r=0,b=0,l=0)))  +
