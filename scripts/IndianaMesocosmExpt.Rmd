@@ -33,7 +33,7 @@ library(patchwork)
 here::i_am("scripts/IndianaMesocosmExpt.Rmd")
 
 # Load the data
-indianadata<-readr::read_csv(here("data/indianadatano22.csv"))
+# indianadata<-readr::read_csv(here("data/indianadatano22.csv"))
 indianadata$chaoborusfactor<-as.factor(indianadata$chaoborus)
 summary(indianadata)
 
@@ -245,7 +245,8 @@ popdensitytimeseriesnometsch <- ggplot(indianadatanometsch, aes(x = time, y = (l
     scale_shape_manual(values=c(15,16,17,18)) +
   theme_bw()+theme(panel.grid = element_blank()) +
     ylim(0,5.0) +
-    theme(axis.title.y = element_blank() ) +
+    theme(axis.title.y = element_blank(), 
+          axis.title.x = element_blank()) +
     theme(legend.position = 'none') 
 
 popdensitytimeseriesnometsch
@@ -413,7 +414,7 @@ metschresevolplotmetsch <- ggplot(evoldata2metsch,aes(round,y=infectionmean_scal
   labs(x="Time (weeks)") +
   labs(y=expression(paste("Ave. infection rate, "*beta*", ("*"*10"^"-7"*")"))) + 
   scale_x_continuous(breaks=c(0,2,6,9)) +
-  theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 0, b = 0, l = 0))) +
   theme(axis.title.x=element_text(margin=margin(t=10,r=0,b=0,l=0))) +
     theme(axis.text.x = element_blank(),
                                         axis.title.x = element_blank() ) +
@@ -434,7 +435,7 @@ metschresevolplotnometsch <- ggplot(evoldata2nometsch,aes(round,y=infectionmean_
   labs(x="Time (weeks)") +
   labs(y=expression(paste("Ave. infection rate, "*beta*", ("*"*10"^"-7"*")"))) + 
   scale_x_continuous(breaks=c(0,2,6,9)) +
-  theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 0, b = 0, l = 0))) +
   theme(axis.title.x=element_text(margin=margin(t=10,r=0,b=0,l=0))) +
       theme(axis.title.y = element_blank() ) +
   theme(legend.position = "none") 
@@ -514,29 +515,47 @@ metschresevolplotgrouped
 
 ## Making one combined plot for figure 1
 ```{r, plot combining infection prevalence and infected density}
-# figure1 <- plot_grid(propinfovertimeplot, meaninfprevplot, infdensityovertimeplot, meaninfhostplot, 
-#                     popdensitytimeseries, meandensityplot, metschresevolplot, metschresevolplotgrouped, labels = "auto", ncol = 2, rel_heights = c(0.9, 0.9, 1, 0.8), align = 'vh')
 
-totaldensityfigure <- popdensitytimeseriesmetsch + popdensitytimeseriesnometsch +
-  plot_layout(nrow = 2) 
+totaldensityfigure <- ggarrange(plotlist = list(popdensitytimeseriesmetsch,popdensitytimeseriesnometsch),
+                    nrow = 2, ncol=1,
+                    heights = c(1/2, 1/2), 
+                    align = "v"
+                    ) 
 
-ylabel1 <- grid::textGrob('Prey density', x = 0.92, y = 0.5, rot = 90)
-ylabel2 <- grid::textGrob('(LN prey per L + 1)', x = 0.92, y = 0.5, rot = 90)
+totaldensityfigurelabeled <- annotate_figure(totaldensityfigure, 
+                          left = text_grob(expression(atop(Prey~density,LN~prey~per~L~+~1)), just = "center", family = "sans", rot=90)) +
+                          theme(plot.margin = margin(0.1, 0.1, 0.1, 0.2, "cm"))
 
-# totaldensityfigurelabeled <- ylabel1 + ylabel2 +
-  totaldensityfigure + 
-  plot_layout(ncol = 3, widths = c(0.2,0.2,2))
+metschresevolplot <- ggarrange(plotlist = list(metschresevolplotmetsch,metschresevolplotnometsch),
+                    nrow = 2, ncol=1,
+                    heights = c(1/2, 1/2), 
+                    align = "v"
+                    ) 
+metschresevolplotlabeled <- annotate_figure(metschresevolplot, 
+                          left = text_grob(expression(atop(label~here)), just = "center", family = "sans", rot=90)) +
+                          theme(plot.margin = margin(0.1, 0.1, 0.1, 0.2, "cm"))
 
-totaldensityfigure
+F1_RHS <- ggarrange(plotlist = list(propinfovertimeplot, infdensityovertimeplot, totaldensityfigurelabeled, metschresevolplotlabeled),
+                    nrow = 4, ncol=1 ,
+                    heights = c(1/4, 1/4, 1/4, 1/4)
+                    )
 
-figure1 <- propinfovertimeplot + meaninfprevplot + infdensityovertimeplot + meaninfhostplot + (popdensitytimeseriesmetsch / popdensitytimeseriesnometsch) + meandensityplot + (metschresevolplotmetsch / metschresevolplotnometsch) + metschresevolplotgrouped +
-  plot_layout(ncol = 2) + 
-  plot_annotation(tag_levels = "a") +
-  grid::grid.draw(grid::textGrob(popdensityylab, x = 0.02, rot = 90))
+F1_LHS <- ggarrange(plotlist = list(meaninfprevplot, meaninfhostplot, meandensityplot, metschresevolplotgrouped),
+                    nrow = 4, ncol=1 ,
+                    heights = c(1/4, 1/4, 1/4, 1/4)
+                    )
+
+figure1 <- ggarrange(
+  F1_RHS + theme(plot.margin = unit(c(1, 0.5, 0, 0), "lines")),
+  F1_LHS + theme(plot.margin = unit(c(1, 0, 0, 0.5), "lines")),
+  ncol = 2, nrow=1,
+  widths = c(1, 1)
+  )
+
 
 figure1
 
-ggsave(here("figures", "figure1.jpg"), figure1, units = "in", width = 7, height = 11, dpi = 300)
+# ggsave(here("figures", "figure1.jpg"), figure1, units = "in", width = 7, height = 11, dpi = 300)
 ```
 
 
