@@ -33,7 +33,7 @@ library(patchwork)
 here::i_am("scripts/IndianaMesocosmExpt.Rmd")
 
 # Load the data
-# indianadata<-readr::read_csv(here("data/indianadatano22.csv"))
+indianadata<-readr::read_csv(here("data/indianadatano22.csv"))
 indianadata$chaoborusfactor<-as.factor(indianadata$chaoborus)
 summary(indianadata)
 
