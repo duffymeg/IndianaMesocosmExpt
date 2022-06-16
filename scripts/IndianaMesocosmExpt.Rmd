@@ -60,7 +60,7 @@ indianadatanometsch <- indianadata %>%
 
 ### Plot
 ```{r, plotting infection prevalence}
-propinfovertimeplot<-ggplot(indianadatametsch,aes(time,y=propinfected,group=chaoborusfactor,color=chaoborusfactor,shape=chaoborusfactor)) +
+propinfovertimeplo<-ggplot(indianadatametsch,aes(time,y=propinfected,group=chaoborusfactor,color=chaoborusfactor,shape=chaoborusfactor)) +
   stat_summary(fun="mean",geom="line",size=1,show.legend=FALSE) +
   stat_summary(fun.data = "mean_se",show.legend=FALSE) +
   stat_summary(fun="mean",geom="point",size=4) +
@@ -71,17 +71,21 @@ propinfovertimeplot<-ggplot(indianadatametsch,aes(time,y=propinfected,group=chao
   theme(legend.position = c(0.35, 0.75)) +
   theme(legend.key.size = unit(0.05, 'cm'), legend.title = element_text(size=10), #change legend title font size
         legend.text = element_text(size=8)) +
-  labs(x="Time (weeks)")+
-  labs(y="Proportion infected") + 
   theme(axis.text.x = element_blank(),
-                                        axis.title.x = element_blank() ) +
+        axis.title.x = element_blank(), 
+        axis.title.y = element_blank(),
+        plot.margin = margin(0.5, 0.5, 0.5, 0.5, "lines")) +
   scale_x_discrete(limits=c("1", "2","3","4","5","6","7","8","9")) 
-propinfovertimeplot
 
+
+propinfovertimeplot <- annotate_figure(propinfovertimeplo, 
+                          left = text_grob(expression(atop(Proportion~infected)), just = "center", family = "sans", rot=90)) +
+                          theme(plot.margin = margin(0.1, 0.1, 0.1, 0.2, "lines"))
+propinfovertimeplot
 # ggsave(here("figures", "propinfovertimeplot.jpg"), propinfovertimeplot, units = "in", width = 6, height = 4, dpi = 300)
 
 #density of infected hosts
-infdensityovertimeplot<-ggplot(indianadatametsch,aes(time,y=infectedlnone,group=chaoborusfactor,color=chaoborusfactor,shape=chaoborusfactor)) +
+infdensityovertimeplo<-ggplot(indianadatametsch,aes(time,y=infectedlnone,group=chaoborusfactor,color=chaoborusfactor,shape=chaoborusfactor)) +
   stat_summary(fun="mean",geom="line",size=1, show.legend = FALSE) +
   stat_summary(fun.data = "mean_se",show.legend=FALSE) + 
   stat_summary(fun="mean",geom="point",size=4,aes(shape=chaoborusfactor),show.legend=FALSE) +
@@ -93,7 +97,13 @@ infdensityovertimeplot<-ggplot(indianadatametsch,aes(time,y=infectedlnone,group=
   labs(y="Infected prey density \n(LN prey per L + 1)") + 
   scale_x_discrete(limits=c("1", "2","3","4","5","6","7","8","9")) +
   theme(axis.text.x = element_blank(),
-                                        axis.title.x = element_blank() )
+  axis.title.x = element_blank(), 
+  axis.title.y = element_blank(),
+  plot.margin = margin(0.5, 0.5, 0.5, 0.5, "lines"))
+
+infdensityovertimeplot <- annotate_figure(infdensityovertimeplo, 
+                          left = text_grob(expression(atop(Infected~prey~density,"(*LN prey per L + 1)")), just = "center", family = "sans", rot=90)) +
+                          theme(plot.margin = margin(0.1, 0.1, 0.1, 0.2, "lines"))
 infdensityovertimeplot
 
 #inftimeseriesplot <- plot_grid(propinfovertimeplot, infdensityovertimeplot, labels = "auto", ncol = 1, align = "v")
@@ -162,7 +172,7 @@ lsmeans(infprevsummaryanalysis,pairwise~chaoborusfactor,adjust="tukey")
 ## Average infection prevalence
 
 ```{r, plotting mean infection prevalence}
-meaninfprevplot <- ggplot(infprevsummaryanalysis,aes(x=chaoborusfactor,y=meanpropinf,color=chaoborusfactor)) +
+meaninfprevplo <- ggplot(infprevsummaryanalysis,aes(x=chaoborusfactor,y=meanpropinf,color=chaoborusfactor)) +
   geom_boxplot(show.legend=FALSE) +
   geom_jitter(shape=17, position=position_jitter(width=0.2, height=0), alpha = 0.5, color = '#787878', size = 2) +
   labs(y="Average \nproportion infected") +
@@ -171,9 +181,14 @@ meaninfprevplot <- ggplot(infprevsummaryanalysis,aes(x=chaoborusfactor,y=meanpro
   geom_text(data=infprevsummaryanalysis,x=2.3, y=0.18,label ="Predation: p = 0.0008", color="black",size = 2.5) +
   ylim(0.0,0.2) +
   theme(axis.text.x = element_blank(),
-                                        axis.title.x = element_blank() ) +
-  theme(panel.grid=element_blank())
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        panel.grid = element_blank(), 
+        plot.margin = margin(0.5, 0.5, 0.5, 0.5, "lines")) 
 
+meaninfprevplot <- annotate_figure(meaninfprevplo, 
+                          left = text_grob(expression(atop(Average,proportion~infected)), just = "center", family = "sans", rot=90)) +
+                          theme(plot.margin = margin(0.1, 0.1, 0.1, 0.2, "lines"))
 meaninfprevplot
 
 ```
@@ -195,7 +210,7 @@ overdisp_fun(infdenssummaryanalysis)
 
 lsmeans(infdenssummaryanalysis,pairwise~chaoborusfactor,adjust="tukey")
 
-meaninfhostplot <- ggplot(infdenssummaryanalysis,aes(x=chaoborusfactor,y=meaninfdens,color=chaoborusfactor)) +
+meaninfhostplo <- ggplot(infdenssummaryanalysis,aes(x=chaoborusfactor,y=meaninfdens,color=chaoborusfactor)) +
   geom_boxplot(show.legend=FALSE) +
   geom_jitter(shape=17, position=position_jitter(width=0.2, height=0), alpha = 0.5, color = '#787878', size = 2) +
   labs(x="Predation treatment (predators per L)",y="Average infected prey density \n(LN prey per L + 1)") +
@@ -204,9 +219,14 @@ meaninfhostplot <- ggplot(infdenssummaryanalysis,aes(x=chaoborusfactor,y=meaninf
   geom_text(data=infdenssummaryanalysis,x=2.3, y=0.18,label ="Predation: p < 0.0001", color="black",size = 2.5) +
   ylim(0.0,1.6) +   
   theme(axis.text.x = element_blank(),
-                                        axis.title.x = element_blank() ) +
-  theme(panel.grid=element_blank())
+  axis.title.x = element_blank(), 
+  axis.title.y = element_blank(), 
+  panel.grid = element_blank(), 
+  plot.margin = margin(0.5, 0.5, 0.5, 0.5, "lines"))
 
+meaninfhostplot <- annotate_figure(meaninfhostplo, 
+                          left = text_grob(expression(atop(Ave.~infected~prey~density,"(LN prey per L + 1)")), just = "center", family = "sans", rot=90)) +
+                          theme(plot.margin = margin(0.1, 0.1, 0.1, 0.2, "lines"))
 meaninfhostplot
 
 ```
@@ -221,33 +241,35 @@ indianadata$metsch <- as.factor(indianadata$metsch)
 popdensitytimeseriesmetsch <- ggplot(indianadatametsch, aes(x = time, y = (logone), color = chaoborusfactor, group = chaoborusfactor, shape = chaoborusfactor)) + 
   stat_summary(fun = "mean", geom="line", aes(group = chaoborusfactor)) + 
   stat_summary(fun.data="mean_se") +
-    stat_summary(fun="mean",geom="point",size=4,aes(shape=chaoborusfactor),show.legend=FALSE) +
+  stat_summary(fun="mean",geom="point",size=4,aes(shape=chaoborusfactor),show.legend=FALSE) +
   labs(x="Time (week)",y="Prey density \n(LN prey per L + 1)") + 
   scale_x_discrete(limits=c("1", "2","3","4","5","6","7","8","9")) + 
   scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +
-    scale_shape_manual(values=c(15,16,17,18)) +
+  scale_shape_manual(values=c(15,16,17,18)) +
   theme_bw()+theme(panel.grid = element_blank()) +
   ylim(0,5.0) +
   theme(axis.text.x = element_blank(),
-                                        axis.title.x = element_blank() ) + 
-  theme(axis.title.y = element_blank() ) +
-    theme(legend.position = 'none') 
+  axis.title.x = element_blank(), 
+  axis.title.y = element_blank(), 
+  plot.margin = margin(0.5, 0.5, 0.5, 1.0, "lines"), 
+  legend.position = 'none')
 
 popdensitytimeseriesmetsch
 
 popdensitytimeseriesnometsch <- ggplot(indianadatanometsch, aes(x = time, y = (logone), color = chaoborusfactor, group = chaoborusfactor, shape = chaoborusfactor)) + 
   stat_summary(fun = "mean", geom="line", aes(group = chaoborusfactor)) + 
   stat_summary(fun.data="mean_se") +
-    stat_summary(fun="mean",geom="point",size=4,aes(shape=chaoborusfactor),show.legend=FALSE) +
+  stat_summary(fun="mean",geom="point",size=4,aes(shape=chaoborusfactor),show.legend=FALSE) +
   labs(x="Time (week)",y="Prey density \n(LN prey per L + 1)") + 
   scale_x_discrete(limits=c("1", "2","3","4","5","6","7","8","9")) + 
   scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +
-    scale_shape_manual(values=c(15,16,17,18)) +
+  scale_shape_manual(values=c(15,16,17,18)) +
   theme_bw()+theme(panel.grid = element_blank()) +
-    ylim(0,5.0) +
-    theme(axis.title.y = element_blank(), 
-          axis.title.x = element_blank()) +
-    theme(legend.position = 'none') 
+  theme(axis.text.x = element_blank(),
+  axis.title.x = element_blank(), 
+  axis.title.y = element_blank(), 
+  plot.margin = margin(0.5, 0.5, 0.5, 1.0, "lines"), 
+  legend.position = 'none')
 
 popdensitytimeseriesnometsch
 
@@ -279,21 +301,28 @@ lsmeans(densitysummaryanalysis,pairwise~chaoborusfactor*metsch,adjust="tukey")
 ## Average total host density plot
 
 ```{r, average prey density plot}
-meandensityplot <- ggplot(densitysummaryanalysis,aes(x=chaoborusfactor,y=meandens, color=chaoborusfactor, fill = metsch)) +
+meandensityplo <- ggplot(densitysummaryanalysis,aes(x=chaoborusfactor,y=meandens, color=chaoborusfactor, fill = metsch)) +
   geom_boxplot(lwd=0.75) +
   geom_point(pch=17, position=position_jitterdodge(jitter.width = 0.2), alpha = 0.5, size = 2, color = 'black',show.legend=FALSE) +
-  labs(x="Predation treatment (predators per L)",y="Average prey density \n(LN prey per L + 1)") +
+  # labs(x="Predation treatment (predators per L)",y="Average prey density \n(LN prey per L + 1)") +
   labs(color = "Predator density \n(per L)", fill = "Parasite treatment") +
   scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black"), guide="none") +
   scale_fill_manual(values=c('white','gray')) +
   theme_bw() +   
   geom_text(data=densitysummaryanalysis,x=2.7, y=0.5,label ="Predation: p < 0.0001\nParasitism: p = 0.12\nPred*Para: p = 0.49", color="black",size = 2.5) +
   ylim(0.0,4.6) + 
-  theme(panel.grid=element_blank()) +
-      theme(legend.position = c(0.2, 0.38)) +
-  theme(legend.key.size = unit(0.5, 'cm'), legend.title = element_blank(),
-        legend.text = element_text(size=7)) 
+  xlab("Predator Density per L")+
+  theme(panel.grid=element_blank(), 
+        axis.title.y = element_blank(), 
+        legend.position = c(0.2, 0.38), 
+        legend.key.size = unit(0.5, 'cm'),
+        legend.title = element_blank(),
+        legend.text = element_text(size=7), 
+        plot.margin = margin(0.5, 0.5, 0.5, 1.0, "lines"))
 
+meandensityplot <- annotate_figure(meandensityplo, 
+                          left = text_grob(expression(atop(Ave.~prey~density,"(LN prey per L + 1)")), just = "center", family = "sans", rot=90)) +
+                          theme(plot.margin = margin(0.1, 0.1, 0.1, 0.2, "lines"))
 meandensityplot
 
 
@@ -411,15 +440,12 @@ metschresevolplotmetsch <- ggplot(evoldata2metsch,aes(round,y=infectionmean_scal
   theme_bw() +
   theme(panel.grid = element_blank()) +
   ylim(0.5, 1.6) +
-  labs(x="Time (weeks)") +
-  labs(y=expression(paste("Ave. infection rate, "*beta*", ("*"*10"^"-7"*")"))) + 
   scale_x_continuous(breaks=c(0,2,6,9)) +
-  theme(axis.title.y = element_text(margin = margin(t = 0, r = 0, b = 0, l = 0))) +
-  theme(axis.title.x=element_text(margin=margin(t=10,r=0,b=0,l=0))) +
-    theme(axis.text.x = element_blank(),
-                                        axis.title.x = element_blank() ) +
-    theme(axis.title.y = element_blank() ) +
-  theme(legend.position = "none") 
+  theme(axis.text.x = element_blank(),
+        axis.title.x = element_blank(), 
+        axis.title.y = element_blank(), 
+        legend.position = "none", 
+        plot.margin = margin(0.5, 0.5, 0.5, 0.5, "lines"))
 metschresevolplotmetsch
 
 metschresevolplotnometsch <- ggplot(evoldata2nometsch,aes(round,y=infectionmean_scaled,group=pred,color=pred,shape=pred)) + 
@@ -435,10 +461,9 @@ metschresevolplotnometsch <- ggplot(evoldata2nometsch,aes(round,y=infectionmean_
   labs(x="Time (weeks)") +
   labs(y=expression(paste("Ave. infection rate, "*beta*", ("*"*10"^"-7"*")"))) + 
   scale_x_continuous(breaks=c(0,2,6,9)) +
-  theme(axis.title.y = element_text(margin = margin(t = 0, r = 0, b = 0, l = 0))) +
-  theme(axis.title.x=element_text(margin=margin(t=10,r=0,b=0,l=0))) +
-      theme(axis.title.y = element_blank() ) +
-  theme(legend.position = "none") 
+  theme(axis.title.y = element_blank(), 
+        legend.position = "none", 
+        plot.margin = margin(0.5, 0.5, 0.5, 0.5, "lines"))
 metschresevolplotnometsch
 
 # ggsave(here("figures", "metschresevolplot.jpg"), metschresevolplot, units = "in", width = 6, height = 3.5, dpi = 300)
@@ -488,7 +513,7 @@ lsmeans(pmod1,pairwise~para,adjust="tukey")
 
 ## Plotting evolution of infection resistance grouping predation treatments
 ```{r, plotting evolution of infection resistance grouping predation treatments}
-metschresevolplotgrouped <- ggplot(evoldata2,aes(round,y=infectionmean_scaled,group=para,color=para,shape=para)) + 
+metschresevolplotgroupe <- ggplot(evoldata2,aes(round,y=infectionmean_scaled,group=para,color=para,shape=para)) + 
   stat_summary(fun="mean",geom="line",size=1,show.legend=FALSE) +
   stat_summary(fun.data = "mean_se",show.legend=FALSE) +
   stat_summary(fun="mean",geom="point",size=3,shape=21,aes(fill=para)) +
@@ -498,16 +523,18 @@ metschresevolplotgrouped <- ggplot(evoldata2,aes(round,y=infectionmean_scaled,gr
   theme_bw() +
   theme(panel.grid = element_blank()) +
   labs(x="Time (weeks)") +
-  labs(y=expression(paste("Ave. infection rate, "*beta*", ("*"*10"^"-7"*")"))) + 
   scale_x_continuous(breaks=c(0,2,6,9)) +  
   ylim(0.5, 1.6) +
     geom_text(data=evoldata2,x=2.3, y=0.66,label ="Parasitism: p = 0.0334", color="black",size = 2.5) +
-  theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
-  theme(axis.title.x=element_text(margin=margin(t=10,r=0,b=0,l=0))) +
-  theme(legend.position = c(2.5, 0.7)) +
-  theme(legend.key.size = unit(0.05, 'cm'), legend.title = element_blank(),
-        legend.text = element_text(size=8)) 
-
+  theme(legend.position = c(2.5, 0.7), 
+        legend.key.size = unit(0.05, 'cm'),
+        legend.title = element_blank(),
+        legend.text = element_text(size=8), 
+        plot.margin = margin(0.5, 0.5, 0.5, 0.5, "lines")) 
+  
+metschresevolplotgrouped <- annotate_figure(metschresevolplotgroupe, 
+                          left = text_grob(expression("Ave. infection rate, " *beta* ", ("*"*10"^"-7"*")"), just = "center", family = "sans", rot=90)) +
+                          theme(plot.margin = margin(0.1, 0.1, 0.1, 0.2, "lines"))
 metschresevolplotgrouped
 
 ```
@@ -524,7 +551,7 @@ totaldensityfigure <- ggarrange(plotlist = list(popdensitytimeseriesmetsch,popde
 
 totaldensityfigurelabeled <- annotate_figure(totaldensityfigure, 
                           left = text_grob(expression(atop(Prey~density,LN~prey~per~L~+~1)), just = "center", family = "sans", rot=90)) +
-                          theme(plot.margin = margin(0.1, 0.1, 0.1, 0.2, "cm"))
+                          theme(plot.margin = margin(0.1, 0.1, 0.1, 0.2, "lines"))
 
 metschresevolplot <- ggarrange(plotlist = list(metschresevolplotmetsch,metschresevolplotnometsch),
                     nrow = 2, ncol=1,
@@ -532,7 +559,7 @@ metschresevolplot <- ggarrange(plotlist = list(metschresevolplotmetsch,metschres
                     align = "v"
                     ) 
 metschresevolplotlabeled <- annotate_figure(metschresevolplot, 
-                          left = text_grob(expression(atop(label~here)), just = "center", family = "sans", rot=90)) +
+                          left = text_grob(expression(atop("Ave. infection rate,"~beta~"("*"*10"^"-7"*")")), just = "center", family = "sans", rot=90)) +
                           theme(plot.margin = margin(0.1, 0.1, 0.1, 0.2, "cm"))
 
 F1_RHS <- ggarrange(plotlist = list(propinfovertimeplot, infdensityovertimeplot, totaldensityfigurelabeled, metschresevolplotlabeled),
