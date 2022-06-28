@@ -54,4 +54,5 @@ in this experiment. Notably, the 'inf.susc' column is beta times 10^7. The value
 
 _______________________________________________________________________________________________________________
 
-CODE: 
+CODE: The Rmd file in the 'scripts' subfolder contains all the code needed to do the analyses and make the figures for the empirical portion of this study. The code for the theory section is in separate files.
+
