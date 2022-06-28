@@ -415,6 +415,10 @@ evoldata2samplesizeswithzeroessummary <- evoldata2samplesizeswithzeroes %>%
     group_by(pred, para, week) %>%
   summarise(meanhosts = mean(meanhosts)) 
 
+evoldata2samplesizeswithzeroessummary2 <- evoldata2samplesizeswithzeroes %>%
+    group_by(pred, para) %>%
+  summarise(meanhosts = mean(meanhosts)) 
+
 #readr::write_csv(evoldata2samplesizeswithzeroessummary, here("data/evoldata2samplesizeswithzeroessummary.csv"))
 
 genotypingsamplesizes <- evoldata2samplesizeswithzeroes %>%
@@ -558,28 +562,8 @@ figure1 <- propinfovertimeplot + meaninfprevplot + infdensityovertimeplot + mean
 figure1
 
 ggsave(here("figures", "figure1.jpg"), figure1, units = "in", width = 7, height = 11, dpi = 300)
-```
 
-# Stage structure -- maybe put this in a supplement
-```{r, looking at stage structure}
-stagetimeplot <- ggplot(indianadata, aes(x = time, y = (propadults), color = chaoborusfactor, group = chaoborusfactor, shape = chaoborusfactor)) + 
-  stat_summary(fun = "mean", geom="line", aes(group = chaoborusfactor)) + 
-  stat_summary(fun.data="mean_se") +
-    stat_summary(fun="mean",geom="point",size=4,aes(shape=chaoborusfactor),show.legend=FALSE) +
-  facet_grid(rows=vars(metsch)) +
-  labs(x="Time (week)",y="Proportion adults") + 
-  scale_x_discrete(limits=c("1", "2","3","4","5","6","7","8","9")) + 
-  scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +
-    scale_shape_manual(values=c(15,16,17,18)) +
-  labs(color="Pred.", shape = "Pred.") +
-  theme_bw()+theme(panel.grid = element_blank()) +
-    theme(legend.position = c(0.07, 0.63)) +
-  theme(legend.key.size = unit(0.05, 'cm'), legend.title = element_text(size=10), 
-        legend.text = element_text(size=8)) 
-
-stagetimeplot
-
-ggsave(here("figures", "SuppAgeStructure.jpg"), stagetimeplot, units = "in", width = 5, height = 4, dpi = 300)
+# Note: I added a few of the labels in photoshop because I couldn't get it to look nice in R
 ```
 
 # Analyses and figures related to Figure 3: chlorophyll and egg ratio
@@ -598,7 +582,16 @@ chlorodata$metsch <- factor(chlorodata$metsch, levels = c("metsch", "no metsch")
 
 chlorodata$metsch <- factor(chlorodata$metsch, c("No parasites", "Parasites"))
 
-chloroplot <- ggplot(chlorodata,aes(time,y=chloroln,group=chaoborus,color=chaoborus,shape=chaoborus)) +
+#Subset data
+chlorodatametsch <- chlorodata %>%
+  filter(metsch == "Parasites")
+
+chlorodatanometsch <- chlorodata %>%
+  filter(metsch == "No parasites")
+```
+
+```{r, plotting chlorophyll data}
+chloroplotnometsch <- ggplot(chlorodatanometsch,aes(time,y=chloroln,group=chaoborus,color=chaoborus,shape=chaoborus)) +
   stat_summary(fun="mean",geom="line",size=1,show.legend=FALSE) +
   stat_summary(fun.data = "mean_cl_boot",show.legend=FALSE) +
   stat_summary(fun="mean",geom="point",size=2,aes(shape=chaoborus)) +
@@ -612,9 +605,27 @@ chloroplot <- ggplot(chlorodata,aes(time,y=chloroln,group=chaoborus,color=chaobo
       theme(legend.position = "none") +
      theme(axis.text.x=element_blank(),
           axis.title.x=element_blank()) +
-  facet_grid(rows=vars(metsch)) 
+     theme(axis.title.y=element_blank()) 
 
-chloroplot
+chloroplotnometsch
+
+chloroplotmetsch <- ggplot(chlorodatametsch,aes(time,y=chloroln,group=chaoborus,color=chaoborus,shape=chaoborus)) +
+  stat_summary(fun="mean",geom="line",size=1,show.legend=FALSE) +
+  stat_summary(fun.data = "mean_cl_boot",show.legend=FALSE) +
+  stat_summary(fun="mean",geom="point",size=2,aes(shape=chaoborus)) +
+  scale_shape_manual(values=c(15,16,17,18)) +
+  labs(color="Pred. dens.", shape = "Pred. dens.") +
+  labs(y="LN chlorophyll \n(ug/L)") +
+  scale_colour_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +
+  theme_bw()+theme(panel.grid = element_blank()) +
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
+  theme(axis.title.x=element_text(margin=margin(t=10,r=0,b=0,l=0))) +
+      theme(legend.position = "none") +
+     theme(axis.text.x=element_blank(),
+          axis.title.x=element_blank()) +
+     theme(axis.title.y=element_blank()) 
+
+chloroplotmetsch
 
 ```
 
@@ -666,16 +677,47 @@ firsthalfchlsummaryplot
 ## Egg ratio plot
 
 ```{r, egg ratio data}
-eggs<-readr::read_csv(here("data/eggdata.csv"))
+# Note added June 23 2022: discovered that the original eggdata.csv file was missing some data -- some data sheets didn't get entered (seems like they didn't get digitized and then data was entered from digitized data); recalculating averages from raw data; everything got thoroughly checked against raw data sheets in June 2022
+raweggs<-readr::read_csv(here("data/raweggdata_6_22_22.csv"))
+raweggsummary <- raweggs %>%
+  group_by(tank, time) %>%
+  summarise(meaneggs = mean(eggs), n=n()) 
+
+# Kludge-y workaround -- exporting to add treatments, then will reimport with treatments added to data sheet
+# readr::write_csv(raweggsummary, here("data/raweggsummary.csv"))
+
+# now import summary data
+eggs<-readr::read_csv(here("data/raweggsummary.csv"), na='.')
+
+
 eggs$pred<-as.factor(eggs$pred)
-#fixing week issue -- need to add 1 to all of these to have the weeks consistent across the different analyses
-eggs$time<-eggs$time+1
+
+# remove tank 22
+eggs <- eggs %>%
+  filter(tank != "22")
+
+#Fix issue with weeks, so that they line up with this timeline:
+#week 0 = Daphnia added
+#week 1 = spores added
+#weeks 2-9 = sampling
+eggs$time <- eggs$time + 1
+
 eggs$time<-as.factor(eggs$time)
 
 summary(eggs)
 
 
-eggplot <- ggplot(eggs,aes(time,y=eggs,group=pred,color=pred,shape=pred)) + 
+#Subset data
+eggsmetsch <- eggs %>%
+  filter(para == "metsch")
+
+eggsnometsch <- eggs %>%
+  filter(para == "no metsch")
+```
+
+```{r, plotting egg data}
+
+eggplotmetsch <- ggplot(eggsmetsch,aes(time,y=meaneggs,group=pred,color=pred,shape=pred)) + 
   stat_summary(fun="mean",geom="line",size=1,show.legend=FALSE) +
   stat_summary(fun.data = "mean_cl_boot",show.legend=FALSE) + 
   stat_summary(fun="mean",geom="point",size=2,aes(shape=pred)) + 
@@ -683,31 +725,34 @@ eggplot <- ggplot(eggs,aes(time,y=eggs,group=pred,color=pred,shape=pred)) +
   labs(color="Pred.", shape = "Pred.") + 
   scale_colour_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +  
   theme_bw()+theme(panel.grid = element_blank()) + 
+  labs(y="Egg ratio \n(embryos per uninfected adult)") + 
+  scale_y_continuous(limits = c(0, 10), breaks = seq(0, 10, by = 5)) +
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) + 
+      theme(legend.position = c(0.85, 0.64)) +
+  theme(legend.key.size = unit(0.05, 'cm'), legend.title = element_text(size=7), #change legend title font size
+        legend.text = element_text(size=6)) +
+     theme(axis.text.x=element_blank(),
+          axis.title.x=element_blank()) +
+     theme(axis.title.y=element_blank()) 
+
+eggplotmetsch
+
+eggplotnometsch <- ggplot(eggsnometsch,aes(time,y=meaneggs,group=pred,color=pred,shape=pred)) + 
+  stat_summary(fun="mean",geom="line",size=1,show.legend=FALSE) +
+  stat_summary(fun.data = "mean_cl_boot",show.legend=FALSE) + 
+  stat_summary(fun="mean",geom="point",size=2,aes(shape=pred)) + 
+  scale_shape_manual(values=c(15,16,17,18)) + 
+  labs(color="Pred.", shape = "Pred.") + 
+  scale_y_continuous(limits = c(0, 10), breaks = seq(0, 10, by = 5)) +
+  scale_colour_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +  
+  theme_bw()+theme(panel.grid = element_blank()) + 
   labs(x="Time (weeks)") + 
   labs(y="Egg ratio \n(embryos per uninfected adult)") + 
   theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) + 
-  facet_grid(rows=vars(metsch)) +
-      theme(legend.position = c(0.85, 0.34)) +
-  theme(legend.key.size = unit(0.05, 'cm'), legend.title = element_text(size=7), #change legend title font size
-        legend.text = element_text(size=6)) 
+      theme(legend.position = "none") +
+     theme(axis.title.y=element_blank()) 
 
-eggplot
-
-
-#The 'eggdata' file has averages calculated by Laura. To get sample sizes, will also import the raw egg data file:
-raweggs<-readr::read_csv(here("data/raweggdata.csv"))
-
-#not dealing with week issue -- doesn't apply to this analysis
-
-raweggsummary <- raweggs %>%
-  filter(tank != 22) %>%
-  group_by(tank,time) %>%
-  summarise(n = n()) 
-
-raweggsummary
-readr::write_csv(raweggsummary, here("data/raweggsummary.csv"))
-
-
+eggplotnometsch
 
 ```
 
@@ -715,69 +760,36 @@ readr::write_csv(raweggsummary, here("data/raweggsummary.csv"))
 
 ```{r, analysis of egg ratio data}
 eggsummary <- eggs %>%
-  group_by(pred, metsch, tank) %>%
-  summarise(meaneggs = mean(eggs)) 
+  drop_na() %>%
+  group_by(pred, para, tank) %>%
+  summarise(meaneggs = mean(meaneggs)) 
   
-eggaov1 <- aov(meaneggs~pred*metsch,data=eggsummary)
+eggaov1 <- aov(meaneggs~pred*para,data=eggsummary)
 summary(eggaov1)  
 
 overdisp_fun(eggaov1)
 # not overdispersed
 
-lsmeans(eggaov1,pairwise~pred*metsch,adjust="tukey")
-
-#calculating sample sizes
-eggsummarysamplesizes <- eggs %>%
-  group_by(pred, metsch, tank) %>%
-  summarise(n = n()) 
-
-eggsummarysamplesizes
-
-eggsummarysamplesizes_25 <- eggs %>%
-  filter(time == 2 | time == 3 | time == 4 | time == 5) %>%
-  group_by(pred, metsch, tank) %>%
-  summarise(n = n()) 
-
-eggsummarysamplesizes_25
-
 
 eggsummary25 <- eggs %>%
   filter(time == 2 | time == 3 | time == 4 | time == 5) %>%  
-  group_by(pred, metsch, tank) %>%
-  summarise(meaneggs = mean(eggs)) 
+  drop_na() %>%
+  group_by(pred, para, tank) %>%
+  summarise(meaneggs = mean(meaneggs)) 
 
-eggaov25 <- aov(meaneggs~pred*metsch,data=eggsummary25)
+eggaov25 <- aov(meaneggs~pred*para,data=eggsummary25)
 summary(eggaov25)  
 
 ```
 
-## Average egg ratio plot
-```{r, average egg ratio plot}
-eggsummaryplot <- ggplot(eggaov1,aes(x=pred,y=meaneggs, color=pred, fill = metsch)) +
+## Average egg ratio plot, weeks 2-5
+
+```{r, egg plot for first half}
+eggsummaryplot25 <- ggplot(eggaov25,aes(x=pred,y=meaneggs, color=pred, fill = para)) +
   geom_boxplot(lwd=0.75) +
   geom_point(pch=17, position=position_jitterdodge(jitter.width = 0.2), alpha = 0.5, size = 2, color = 'black',show.legend=FALSE) +
-      geom_text(data=eggaov1,x=2.3, y=2.62,label ="Predation: p < 0.0001\nParasitism: p = 0.16\nPred*Para: p = 0.50", color="black",size = 2.5) +
-  labs(y="Average egg ratio \n(embryos per uninfected adult)") +
-  labs(color = "Predator density \n(per L)", fill = "Parasite treatment") +
-  scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black"), guide="none") +
-  scale_fill_manual(values=c('white','gray')) +
-  theme_bw() +   
-  theme(panel.grid=element_blank()) +
-      theme(legend.position = c(0.15, 0.83)) +
-  theme(legend.key.size = unit(0.5, 'cm'), legend.title = element_text(size=10), #change legend title font size
-        legend.text = element_text(size=8))  
-
-eggsummaryplot
-
-
-```
-
-```{r, egg plots split by time}
-eggsummaryplot25 <- ggplot(eggaov25,aes(x=pred,y=meaneggs, color=pred, fill = metsch)) +
-  geom_boxplot(lwd=0.75) +
-  geom_point(pch=17, position=position_jitterdodge(jitter.width = 0.2), alpha = 0.5, size = 2, color = 'black',show.legend=FALSE) +
-      geom_text(data=eggaov25,x=1.5, y=4.45,label ="Predation: p < 0.0001\nParasitism: p = 0.071\nPred*Para: p = 0.56", color="black",size = 2.5) +
-  labs(x="Predator density (per L)", y="Average egg ratio weeks 2-5 \n(embryos per uninfected adult)") +
+      geom_text(data=eggaov25,x=1.5, y=4.45,label ="Predation: p < 0.0001\nParasitism: p = 0.47\nPred*Para: p = 0.90", color="black",size = 2.5) +
+  labs(x="Predator density (per L)", y="Average egg ratio weeks 2-5 \n(embryos per adult)") +
   labs(color = "Predator density \n(per L)", fill = "Parasite treat.") +
   scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black"), guide="none") +
   scale_fill_manual(values=c('white','gray')) +
@@ -794,13 +806,41 @@ eggsummaryplot25
 ## Combining into figure 3
 
 ```{r, making figure 3}
-figure3 <- plot_grid(chloroplot, firsthalfchlsummaryplot, secondhalfchlsummaryplot, eggplot, eggsummaryplot25, eggsummaryplot69, labels = c('a', 'b', 'c', 'd', 'e', 'f'), ncol = 3, rel_heights = c(0.9, 1))
+figure3panela <- (chloroplotmetsch / chloroplotnometsch) 
+figure3panelc <- (eggplotmetsch / eggplotnometsch)
+
+
+figure3 <- (figure3panela | firsthalfchlsummaryplot) /
+  (figure3panelc | eggsummaryplot25) +
+  plot_layout(ncol = 1) + 
+  plot_annotation(tag_levels = list(c('a', ' ', 'b', 'c', '', 'd'))) 
+
 figure3
 
-ggsave(here("figures", "figure3.jpg"), figure3, units = "in", width = 9, height = 5.5, dpi = 300)
+ggsave(here("figures", "figure3.jpg"), figure3, units = "in", width = 7, height = 6, dpi = 300)
+
+
+# Note: I added a few of the labels in photoshop because I couldn't get it to look nice in R
+
 ```
 
-# Figure 4: Evolutionary analyses
+```{r, sample sizes for egg ratios}
+eggratiosamplesizes <- eggs %>%
+    group_by(pred, para, time) %>%
+  summarise(meanhosts = mean(n)) 
+
+eggratiosamplesizes2 <- eggratiosamplesizes %>% 
+  group_by(pred, para, time) %>%
+  summarise(meanhosts = mean(meanhosts)) 
+
+eggratiosamplesizeshighpred <- eggratiosamplesizes %>% 
+  filter(pred == 1) %>%
+  group_by(para, time) %>%
+  summarise(meanhosts = mean(meanhosts)) 
+
+```
+
+# Supplement figure: Evolutionary analyses
 
 ## Correlations between traits
 ```{r, correlations between pred and parasite susceptibility}
@@ -878,12 +918,37 @@ predresevolplottogether<-ggplot(evoldata2,aes(round,y=predationmean,group=para,c
 predresevolplottogether
 ```
 
-## Combining to make old figure 4
-```{r, making old figure 4 which is now in the supplement}
-evolutionplot <- plot_grid(traitplot, predresevolplot, predresevolplottogether, labels = "auto", ncol = 1)
+## Combining to make supplement figure S1
+```{r, making supplement figure S1}
+evolutionplot <- traitplot + predresevolplot + predresevolplottogether +
+  plot_layout(ncol = 1) + 
+  plot_annotation(tag_levels = 'a') 
 evolutionplot
 
 ggsave(here("figures", "evolutionplot.jpg"), evolutionplot, units = "in", width = 3, height = 7, dpi = 300)
+```
+
+
+# Stage structure -- this is Figure S2
+```{r, looking at stage structure}
+stagetimeplot <- ggplot(indianadata, aes(x = time, y = (propadults), color = chaoborusfactor, group = chaoborusfactor, shape = chaoborusfactor)) + 
+  stat_summary(fun = "mean", geom="line", aes(group = chaoborusfactor)) + 
+  stat_summary(fun.data="mean_se") +
+    stat_summary(fun="mean",geom="point",size=4,aes(shape=chaoborusfactor),show.legend=FALSE) +
+  facet_grid(rows=vars(metsch)) +
+  labs(x="Time (week)",y="Proportion adults") + 
+  scale_x_discrete(limits=c("1", "2","3","4","5","6","7","8","9")) + 
+  scale_color_manual(values=c("#6baed6", "#3182bd", "#08519c","black")) +
+    scale_shape_manual(values=c(15,16,17,18)) +
+  labs(color="Pred.", shape = "Pred.") +
+  theme_bw()+theme(panel.grid = element_blank()) +
+    theme(legend.position = c(0.07, 0.63)) +
+  theme(legend.key.size = unit(0.05, 'cm'), legend.title = element_text(size=10), 
+        legend.text = element_text(size=8)) 
+
+stagetimeplot
+
+ggsave(here("figures", "SuppAgeStructure.jpg"), stagetimeplot, units = "in", width = 5, height = 4, dpi = 300)
 ```
 
 
