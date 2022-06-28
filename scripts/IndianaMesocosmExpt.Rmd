@@ -41,7 +41,8 @@ summary(indianadata)
 #week 0 = Daphnia added
 #week 1 = spores added
 #weeks 2-9 = sampling
-indianadata$time <- indianadata$time + 1
+#based on the way the data are in the data sheet, week 0 doesn't need to be adjusted by the other weeks do
+indianadata <- mutate(indianadata, time = ifelse(time == 0, 0, time + 1))
 
 indianadata <- indianadata %>% mutate(metsch=recode(metsch,'No Parasites'='No parasites'))
 
@@ -91,7 +92,7 @@ infdensityovertimeplot<-ggplot(indianadatametsch,aes(time,y=infectedlnone,group=
   theme_bw()+theme(panel.grid = element_blank()) + 
   labs(x="Time (weeks)") +
   labs(y="Infected prey density \n(I; LN prey per L + 1)") + 
-  scale_x_discrete(limits=c("1", "2","3","4","5","6","7","8","9")) +
+  scale_x_discrete(limits=c("1","2","3","4","5","6","7","8","9")) +
   theme(axis.text.x = element_blank(),
                                         axis.title.x = element_blank() ) 
 infdensityovertimeplot
@@ -155,7 +156,7 @@ summary(infprevsummaryanalysis)
 overdisp_fun(infprevsummaryanalysis)
 #not overdispersed!
 
-lsmeans(infprevsummaryanalysis,pairwise~chaoborusfactor,adjust="tukey")
+# lsmeans(infprevsummaryanalysis,pairwise~chaoborusfactor,adjust="tukey")
 
 ```
 
@@ -193,7 +194,7 @@ summary(infdenssummaryanalysis)
 overdisp_fun(infdenssummaryanalysis)
 #not overdispersed
 
-lsmeans(infdenssummaryanalysis,pairwise~chaoborusfactor,adjust="tukey")
+# lsmeans(infdenssummaryanalysis,pairwise~chaoborusfactor,adjust="tukey")
 
 meaninfhostplot <- ggplot(infdenssummaryanalysis,aes(x=chaoborusfactor,y=meaninfdens,color=chaoborusfactor)) +
   geom_boxplot(show.legend=FALSE) +
@@ -279,7 +280,7 @@ summary(densitysummaryanalysis)
 overdisp_fun(densitysummaryanalysis)
 #not overdispersed
 
-lsmeans(densitysummaryanalysis,pairwise~chaoborusfactor*metsch,adjust="tukey")
+# lsmeans(densitysummaryanalysis,pairwise~chaoborusfactor*metsch,adjust="tukey")
 
 ```
 ## Average total host density plot
@@ -512,15 +513,15 @@ evoldata3 <- evoldata2 %>%
 infsuscmod1<-lme(infectionmean_scaled~pred+para+round+pred*para+pred*round+para*round+pred*para*round,random=~1|tank,data=evoldata3)
 summary(infsuscmod1)
 anova(infsuscmod1)
-lsmeans(infsuscmod1,pairwise~round,adjust="tukey")
-lsmeans(infsuscmod1,pairwise~para,adjust="tukey")
+# lsmeans(infsuscmod1,pairwise~round,adjust="tukey")
+# lsmeans(infsuscmod1,pairwise~para,adjust="tukey")
 
 
 pmod1<-lme(pmean~pred+para+round+pred*para+pred*round+para*round+pred*para*round,random=~1|tank,data=evoldata3)
 summary(pmod1)
 anova(pmod1)
-lsmeans(pmod1,pairwise~round,adjust="tukey")
-lsmeans(pmod1,pairwise~para,adjust="tukey")
+# lsmeans(pmod1,pairwise~round,adjust="tukey")
+# lsmeans(pmod1,pairwise~para,adjust="tukey")
 
 ```
 
