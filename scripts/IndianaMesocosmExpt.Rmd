@@ -165,7 +165,7 @@ overdisp_fun(infprevsummaryanalysis)
 
 lsmeans(infprevsummaryanalysis,pairwise~chaoborusfactor,adjust="tukey")
 
-# checking for consistency of results if just analyze week 5
+# checking for consistency of results if just analyze week 5 (analysis suggested by reviewers)
 infprevsummaryweek5 <- indianadatametschanalysis %>%
   filter(time == "5") %>%
   group_by(chaoborus, metsch) %>%
