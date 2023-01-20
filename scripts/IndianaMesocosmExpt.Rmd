@@ -53,7 +53,7 @@ indianadatametsch <- indianadata %>%
 
 indianadatanometsch <- indianadata %>%
   filter(metsch == "No parasites")
-
+ 
 ```
 
 # Plots and analysis related to figure 1: infection prevalence and infected host density
